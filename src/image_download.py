@@ -11,9 +11,6 @@ import time
 from tqdm import tqdm
 from io import BytesIO
 from PIL import Image
-import logging
-
-logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 CLIENT_ID = os.getenv("SPOTIFY_KEY")
@@ -25,7 +22,6 @@ song_df = pd.read_csv('song_id.csv')
 auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-#this function extracts several features from the album cover
 def extract_features(image):
     image_np = np.array(image.convert('RGB'))
     mean = np.mean(image_np)
@@ -36,7 +32,7 @@ def extract_features(image):
     red = cv.calcHist([image_np], [0], None, [256], [0, 256])
     green = cv.calcHist([image_np], [1], None, [256], [0, 256])
     blue = cv.calcHist([image_np], [2], None, [256], [0, 256])
-    distribution = np.concatenate([gray_dist, red, green, blue]).flatten()
+    distribution = np.column_stack((gray_dist.flatten(), red.flatten(), green.flatten(), blue.flatten()))
 
     co_matrix = skimage.feature.graycomatrix(gray, [5], [0], levels=256, normed=True)
     contrast = skimage.feature.graycoprops(co_matrix, 'contrast')[0, 0]
@@ -48,30 +44,16 @@ def extract_features(image):
     sobelxy = cv.Sobel(src=img_blur, ddepth=cv.CV_64F, dx=1, dy=1, ksize=5)
     edge_mean = np.mean(sobelxy)
 
-    return [mean, stdev, contrast, correlation, energy, homogeneity, edge_mean] + distribution.tolist()
+    return [mean, stdev, contrast, correlation, energy, homogeneity, edge_mean, distribution.tolist()]
 
-def fetch_track_with_retry(track_id, retries=3):
-    for attempt in range(retries):
-        try:
-            return sp.track(track_id)
-        except spotipy.exceptions.SpotifyException as e:
-            if 'rate' in str(e).lower():
-                wait_time = 60
-                msg = str(e)
-                if 'Retry will occur after' in msg:
-                    try:
-                        wait_time = int(msg.split('Retry will occur after:')[1].split()[0]) / 1000
-                    except:
-                        pass
-                logging.warning(f"Rate limit hit. Waiting for {wait_time} seconds...")
-                time.sleep(wait_time)
-            else:
-                logging.error(f"Spotify API error on attempt {attempt+1}: {e}")
-                time.sleep(5)
-    raise Exception(f"Failed to fetch track {track_id} after {retries} retries")
+def save_partial_csv(records):
+    columns = ['id', 'artist', 'song_name', 'mean', 'stdev', 'contrast', 'correlation', 'energy', 'homogeneity', 'edge_mean'] + [f'color_{i}' for i in range(1024)]
+    feature_df = pd.DataFrame(records, columns=columns)
+    feature_df.to_csv('album_cover_features_partial.csv', index=False)
+    print("Saved partial results to album_cover_features_partial.csv")
 
 def main():
-    partial_path = 'album_cover_features_partial.csv'
+    partial_path = 'data/raw/album_cover_features_partial.csv'
     records = []
     processed_ids = set()
 
@@ -81,35 +63,37 @@ def main():
         records = partial_df.values.tolist()
         processed_ids = set(partial_df['id'].tolist())
 
-    try:
-        for track_id in tqdm(song_df['track_id']):
-            if track_id in processed_ids:
-                continue
-            try:
-                track = fetch_track_with_retry(track_id)
-                artist = track['artists'][0]['name']
-                song_name = track['name']
-                image_url = track['album']['images'][0]['url']
+    track_ids = [tid for tid in song_df['track_id'].tolist() if tid not in processed_ids]
 
-                response = requests.get(image_url)
-                image = Image.open(BytesIO(response.content))
+    for i in tqdm(range(0, len(track_ids), 50)):
+        batch_ids = track_ids[i:i + 50]
+        try:
+            tracks = sp.tracks(batch_ids)['tracks']
+            for track in tracks:
+                try:
+                    track_id = track['id']
+                    artist = track['artists'][0]['name']
+                    song_name = track['name']
+                    image_url = track['album']['images'][0]['url']
 
-                features = extract_features(image)
-                record = [track_id, artist, song_name] + features
-                records.append(record)
-            except Exception as e:
-                print(f"Error processing track {track_id}: {e}")
-    except Exception as e:
-        print(f"Fatal error encountered: {e}. Saving progress...")
-    finally:
-        columns = ['id', 'artist', 'song_name', 'mean', 'stdev', 'contrast', 'correlation', 'energy', 'homogeneity', 'edge_mean'] + [f'color_{i}' for i in range(1024)]
-        feature_df = pd.DataFrame(records, columns=columns)
-        feature_df.to_csv('album_cover_features_partial.csv', index=False)
-        print("Saved current progress to album_cover_features_partial.csv")
+                    response = requests.get(image_url)
+                    image = Image.open(BytesIO(response.content))
 
-        if len(records) == len(song_df):
-            feature_df.to_csv('album_cover_features_single.csv', index=False)
-            print("Saved full results to album_cover_features_single.csv")
+                    features = extract_features(image)
+                    record = [track_id, artist, song_name] + features
+                    records.append(record)
+                    time.sleep(0.05)
+                except Exception as e:
+                    print(f"Error processing track in batch: {e}")
+        except Exception as e:
+            print(f"Batch failed at index {i}: {e}")
+            save_partial_csv(records)
+            time.sleep(1)
+
+    columns = ['id', 'artist', 'song_name', 'mean', 'stdev', 'contrast', 'correlation', 'energy', 'homogeneity', 'edge_mean'] + [f'color_{i}' for i in range(1024)]
+    feature_df = pd.DataFrame(records, columns=columns)
+    feature_df.to_csv('data/raw/album_cover_features.csv', index=False)
+    print("Saved full results to album_cover_features.csv")
 
 if __name__ == '__main__':
     main()
