@@ -1,0 +1,286 @@
+---
+title: "ML Spotify"
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| message: false
+
+library(knitr)
+library(tidyverse)
+library(kableExtra)
+library(broom)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(magrittr)
+library(corrplot)
+library(plotly)
+```
+
+```{r}
+#| echo: false
+
+spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+```
+
+## Introduction
+
+### Project Goals
+
+### Research Questions
+
+### Adjustments or Refinements
+
+## Data
+
+### Sources
+
+Kaggle
+
+The "Top 10000 Spotify Songs - ARIA and Billboard Charts" is a comprehensive collection of 10,000 of the most popular songs that have dominated the music scene from the 1950 to the present day. This dataset was curated based on rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts, ensuring a diverse representation of songs that have achieved immense commercial success and cultural significance.
+
+The dataset encompasses various music genres and showcases the evolution of musical trends over the years, providing valuable insights into the ever-changing landscape of popular music. It includes tracks from iconic artists and bands, representing a mix of timeless classics and contemporary hits that have left a lasting impact on music lovers worldwide.
+
+### Description
+
+```{r}
+dim(spotify)
+```
+
+The dataset is composed of 10.000 entries and 35 columns capturing informations about the song popularity, the artist, the release date or the particularities of the music.
+
+| Variable | Description | Category | Example |
+|-----------------|---------------------|-----------------|-----------------|
+| track_uri | Unique identifier for the track | character | spotify:track:123... |
+| track_name | Name of the track | character | Bohemian Rhapsody |
+| artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
+| artist_names | Name(s) of the performing artist(s) | character | Queen |
+| album_uri | Unique identifier for the album | character | spotify:album:def... |
+| album_name | Title of the album | character | A Night at the Opera |
+| album_artist_uris | URIs of the album's main artist(s) | character | spotify:artist:abc... |
+| album_artist_names | Name(s) of the album's main artist(s) | character | Queen |
+| release_date | Date the album was released | date | 1975-11-21 |
+| album_image_url | Link to album cover image | character | https://i.scdn.co/image/... |
+| disc_number | Disc number of the track in multi-disc sets | numeric | 1 |
+| track_number | Track's position on the disc | numeric | 11 |
+| duration_ms | Length of the track in milliseconds | numeric | 354000 |
+| preview_url | URL to 30-second preview of the track | character | https://p.scdn.co/mp3-preview/... |
+| is_explicit | Indicates if track has explicit content | logical | TRUE |
+| popularity | Spotify popularity score (0-100) | integer | 85 |
+| isrc | International Standard Recording Code | character | GBUM71029604 |
+| added_by | User who added the track to playlist | character | user_id_123 |
+| added_at | Timestamp when track was added | datetime | 2022-07-15T12:00:00Z |
+| artist_genres | Genres associated with the artist(s) | character | rock, classic rock |
+| danceability | How suitable a track is for dancing | numeric | 0.6 |
+| energy | Intensity and activity level of the track | numeric | 0.85 |
+| key | Musical key of the track (0=C, 1=C♯, ...) | integer | 5 |
+| loudness | Overall loudness in decibels | numeric | -5.3 |
+| mode | Modality: major (1) or minor (0) | integer | 1 |
+| speechiness | Presence of spoken words in the track | numeric | 0.05 |
+| acousticness | Confidence that track is acoustic | numeric | 0.02 |
+| instrumentalness | Likelihood that track is instrumental | numeric | 0.001 |
+| liveness | Likelihood of live audience presence | numeric | 0.09 |
+| valence | Musical positiveness conveyed | numeric | 0.7 |
+| tempo | Beats per minute (BPM) | numeric | 120.5 |
+| time_signature | Estimated time signature | integer | 4 |
+| album_genres | Genres associated with the album | character | rock, progressive rock |
+| label | Record label | character | EMI |
+| copyrights | Copyright info for the album or track | character | ℗ 1975 Queen Productions Ltd. |
+
+```{r}
+#| echo: false
+
+# Preview the dataset
+knitr::kable(head(spotify), 
+             format = "markdown", 
+             align = 'c', 
+             table.attr = 'class="table table-bordered"',
+             row.names = FALSE) %>%
+  kable_styling(font_size = 10, full_width = FALSE, position = "center")
+
+```
+
+### Wrangling / Cleaning
+
+Rename all variables and than delete the unnecessary one.
+
+```{r}
+spotify <- spotify |>
+  rename(
+    track_uri            = `Track URI`,
+    track_name           = `Track Name`,
+    artist_uris          = `Artist URI(s)`,
+    artist_names         = `Artist Name(s)`,
+    album_uri            = `Album URI`,
+    album_name           = `Album Name`,
+    album_artist_uris    = `Album Artist URI(s)`,
+    album_artist_names   = `Album Artist Name(s)`,
+    release_date         = `Album Release Date`,
+    album_image_url      = `Album Image URL`,
+    disc_number          = `Disc Number`,
+    track_number         = `Track Number`,
+    duration_ms          = `Track Duration (ms)`,
+    preview_url          = `Track Preview URL`,
+    is_explicit          = `Explicit`,
+    popularity           = `Popularity`,
+    isrc                 = `ISRC`,
+    added_by             = `Added By`,
+    added_at             = `Added At`,
+    artist_genres        = `Artist Genres`,
+    danceability         = `Danceability`,
+    energy               = `Energy`,
+    key                  = `Key`,
+    loudness             = `Loudness`,
+    mode                 = `Mode`,
+    speechiness          = `Speechiness`,
+    acousticness         = `Acousticness`,
+    instrumentalness     = `Instrumentalness`,
+    liveness             = `Liveness`,
+    valence              = `Valence`,
+    tempo                = `Tempo`,
+    time_signature       = `Time Signature`,
+    album_genres         = `Album Genres`,
+    label                = `Label`,
+    copyrights           = `Copyrights`
+  )
+```
+
+```{r}
+spotify_vr <- spotify |>
+  select(-artist_uris, -album_uri,-album_artist_uris,-album_artist_names, -disc_number,-preview_url, -isrc, -added_by, -added_at, -album_genres, -copyrights,-key)
+
+ncol(spotify_vr)
+```
+
+We have now a data set with 23 columns.
+
+We only keep the ID from the URL:
+
+```{r}
+library(dplyr)
+library(stringr)
+
+spotify_vr <- spotify_vr |>
+  mutate(track_uri = str_extract(track_uri, "[^:]+$"))
+```
+
+```{r}
+#| echo: false
+
+# Preview the dataset
+knitr::kable(head(spotify_vr), 
+             format = "markdown", 
+             align = 'c', 
+             table.attr = 'class="table table-bordered"',
+             row.names = FALSE) %>%
+  kable_styling(font_size = 10, full_width = FALSE, position = "center")
+```
+
+### Spotting Mistakes and Missing Data
+
+The dataset have a total of 625 missing values, including 551 for the 'artist_genres'.
+
+We are going to drop the instance with missing feature about the music.
+
+```{r}
+# Count total missing values
+sum(is.na(spotify_vr))  # This will return the total number of NAs
+
+# Show missing values per column
+colSums(is.na(spotify_vr))
+
+#Rows with missing values
+rows_with_missing <- spotify_vr |>
+  filter(if_any(everything(), ~ is.na(.) | . == ""))
+
+# View the rows
+rows_with_missing
+
+spotify_clean <- spotify_vr |>
+  filter(!is.na(loudness) & loudness != "")
+
+colSums(is.na(spotify_clean))
+
+```
+
+### Listing Anomalies and Outliers
+
+```{r}
+numeric_data <- spotify_clean %>% select(where(is.numeric)) |>
+  select(-mode,-time_signature)
+
+long_data <- pivot_longer(numeric_data, cols = everything(), names_to = "Variable", values_to = "Value")
+
+# Faceted boxplots with individual y-axis scales
+ggplot(long_data, aes(x = "", y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~ Variable, scales = "free_y") +
+  labs(title = "Boxplots for Numeric Variables (Individual Scales)", x = "", y = "") +
+  theme_minimal()
+```
+
+**Interpretation:**
+
+Acousticness, energy, danceability, instrumentalness, liveness, valence, speechiness:
+
+-   Most values lie between 0 and 1 (bounded variables).
+
+-   Many of them (like instrumentalness, speechiness) show long tails or outliers close to 1.
+
+-   These suggest that although the average track is not instrumental or speech-heavy, some are strongly so.
+
+Duration_ms:
+
+-   Slightly skewed with a few long-duration tracks (outliers).
+
+-   Most tracks are tightly clustered around the median.
+
+loudness:
+
+-   Negative values (typical, as loudness in dB is relative to silence).
+
+-   Distribution is tight with some strong outliers at low values (very quiet or dynamic tracks).
+
+popularity:
+
+-   Fairly spread out with a few outliers, indicating some tracks are much more/less popular than typical.
+
+tempo:
+
+-   High variance with outliers—some songs have extremely fast tempos.
+
+-   This might include errors or experimental tracks.
+
+track_number:
+
+Most tracks are near the beginning of an album (track 1–10).
+
+Outliers indicate albums with many tracks or incorrectly labeled track numbers.
+
+### Summary statistics
+
+```{r}
+# Summary statistics for key numeric features
+spotify_clean %>%
+  select_if(is.numeric) %>%
+  summary() %>%
+  kable() %>%
+  kable_styling()
+
+```
+
+### Correlation Matrix
+
+```{r}
+spotify_num <- spotify_clean %>%
+  select_if(is.numeric) %>%
+  na.omit()
+
+corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
+
+```
