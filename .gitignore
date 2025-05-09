@@ -175,3 +175,5 @@ cython_debug/
 
 # Add data to the gitignore
 data/raw
+
+r_scripts/top_10000_1950-now.csv
