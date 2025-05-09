@@ -4,4 +4,327 @@ format: html
 editor: visual
 ---
 
+```{r, echo=FALSE}
+library(tidyverse)
+library(vtable)
+library(stringr)
+library(ggplot2)
+library(ggcorrplot)
+library(plotly)
+```
 
+```{r}
+#download the data
+dataset_raw <- read_csv("top_10000_1950-now.csv", show_col_types = FALSE)
+View(dataset_raw)
+```
+
+We start by cleaning the data
+
+```{r}
+dataset_clean <- dataset_raw %>%
+  select(-c(`Album Artist URI(s)`,
+            `Album Artist Name(s)`,
+            `Disc Number`, `ISRC`, 
+            `Added By`, 
+            `Added At`, 
+            `Album Genres`, 
+            `Copyrights`)
+         ) %>%
+  rename(trackID = `Track URI`,
+         trackName = `Track Name`,
+         artistID = `Artist URI(s)`,
+         artistName = `Artist Name(s)`,
+         releaseDate = `Album Release Date`,
+         imageURL = `Album Image URL`,
+         trackNumber = `Track Number`,
+         trackDuration = `Track Duration (ms)`,
+         previewURL = `Track Preview URL`,
+         artistGenres = `Artist Genres`,
+         timeSignature = `Time Signature`
+         ) %>%
+  mutate(releaseDate = str_sub(releaseDate, 1, 4)) %>% drop_na(releaseDate) %>%
+  mutate(releaseDate = as.numeric(releaseDate))
+```
+
+# Exploratory Data Analysis
+
+## Table description
+
+```{r}
+library(knitr)
+
+table_data <- data.frame(
+  Column_Name = c(
+    "trackDuration", "Popularity", "Danceability", "Energy", "Key", 
+    "Loudness", "Mode", "Speechiness", "Acousticness", "Instrumentalness", 
+    "Liveness", "Valence", "Tempo", "timeSignature", "trackID", 
+    "trackName", "artistID", "artistName", "Album URI", "Album Name", 
+    "releaseDate", "imageURL", "trackNumber", "previewURL", "Explicit", 
+    "artistGenres", "Label"
+  ),
+  Description = c(
+    "Duration of the track",
+    "Popularity score from Spotify (0–100)",
+    "Danceability score",
+    "Energy score",
+    "Musical key (0–11, where C = 0, C#/Db = 1, …)",
+    "Overall loudness",
+    "Modality (1 = major, 0 = minor)",
+    "Presence of spoken words",
+    "Acoustic character",
+    "Instrumental likelihood",
+    "Likelihood track was recorded live",
+    "Musical positivity",
+    "Beats per minute",
+    "Time signature (beats per bar)",
+    "Unique identifier for the track",
+    "Name of the song",
+    "Unique identifier for the artist",
+    "Name of the artist",
+    "Unique Spotify album URI",
+    "Name of the album",
+    "Release date of the track",
+    "URL of the album or track cover image",
+    "Track number on the album",
+    "URL for 30s audio preview",
+    "Whether the track contains explicit content",
+    "Genres associated with the artist",
+    "Record label"
+  ),
+  Units = c(
+    "milliseconds", "score (0–100)", "0–1 (dimensionless)", "0–1 (dimensionless)", 
+    "integer (0–11)", "decibels (dB)", "binary (0/1)", "0–1 (dimensionless)", 
+    "0–1 (dimensionless)", "0–1 (dimensionless)", "0–1 (dimensionless)", 
+    "0–1 (dimensionless)", "BPM", "integer", "string", "string", "string", 
+    "string", "string", "string", "date (YYYY-MM-DD)", "string (URL)", 
+    "integer", "string (URL)", "TRUE/FALSE", "string/list", "string"
+  )
+)
+
+kable(table_data, caption = "Description of Track Dataset Variables")
+```
+
+For this data analysis, we will see different graphs....
+
+## Summary statistics
+
+The following table shows summary statistics. of several variables
+
+```{r}
+st(dataset_clean)
+```
+
+As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
+
+The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* 
+The audio preview below:
+```{=html}
+<audio controls>
+  <source src="https://p.scdn.co/mp3-preview/2da01a5ad77fddb1bc2b0ed9e138a74eabe43333?cid=9950ac751e34487dbbe027c4fd7f8e99" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+```
+
+The explicit tag, has a very imbalanced classes with 95% of songs being not explicit. 
+The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33. 
+
+Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
+
+
+## Correlation matrix
+
+```{r}
+#start by selecting numeric columns
+num_dataset <- dataset_clean %>% 
+  select(c(releaseDate, trackNumber, trackDuration, Explicit, Popularity, Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature))
+
+cor_matrix <- cor(num_dataset, use = "complete.obs")
+
+ggcorrplot(
+  cor_matrix,
+  method    = "square",   
+  lab       = TRUE,       
+  lab_size  = 2,           
+  tl.cex    = 10,        
+  colors    = c("blue", "white", "red"), 
+  outline.col = "gray80",
+) +
+  labs(
+    title = "Correlation Matrix for Song features"
+  ) +
+  xlab(NULL)+ ylab(NULL)+
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+```
+
+
+
+
+## Release year
+
+Release year is the dependent variable from our dataset, we take the granularity of years.
+
+```{r}
+#adding a histogram with songs by year
+year_hist <- dataset_clean %>% 
+  select(releaseDate) %>%
+  filter(releaseDate>0) %>%
+  ggplot(aes(x=releaseDate)) +
+  geom_histogram(binwidth = 1, fill="blue", color="black") +
+  theme_minimal() +
+  labs(title = "Number of songs by release year", x="Year") 
+year_hist
+#year_hist %>% ggplotly()
+```
+
+As we can see, our dataset tends to contain more songs released in recent years. Leading to unbalanced data, solving this problem will be discussed in subsequent sections.
+
+
+
+
+## track numbers
+
+```{r}
+track_dens <- dataset_clean %>% 
+  filter(trackNumber!=0) %>% 
+  ggplot(aes(x=trackNumber)) +
+  geom_histogram(fill='blue', color='black') + 
+  theme_minimal() +
+  labs(title = "Track number density", y="Density", x="track number")
+track_dens
+  
+```
+
+As we can see, most songs heavily cluster towards lower numbers.
+
+What may be insteresting to try is if Benford's law can be applied here.
+
+```{r}
+benford_distr <- data.frame(
+  first_digit = 1:9,
+  benford_pct = log10(1 + 1/(1:9)) * 100
+)
+
+benford <- dataset_clean %>% 
+  filter(trackNumber!=0) %>% 
+  mutate(first_digit = as.numeric(substr(as.character(trackNumber), 1, 1))) %>% 
+  ggplot(aes(x = first_digit)) +
+  geom_histogram(
+    bins = 9,
+    fill = "blue",
+    color = "black",
+    aes(y = after_stat(count / sum(count) * 100))
+  ) +
+  geom_line(
+    data = benford_distr,
+    aes(x = first_digit, y = benford_pct),
+    color = "red",
+    size = 1
+  ) +
+  scale_x_continuous(breaks = 1:9) +
+  labs(
+    title = "First Digit Distribution of Track Numbers vs Benford's Law",
+    x = "First Digit",
+    y = "Percentage"
+  ) +
+  theme_minimal()
+
+benford
+
+```
+
+Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs.
+.......
+
+
+Lastly, we can take a look at the evolution of track numbers over time.
+
+```{r}
+year_tracknum <- dataset_clean %>% 
+  filter(releaseDate!=0,
+         trackNumber!=0) %>% 
+  ggplot(aes(x=releaseDate, y=trackNumber)) +
+  geom_point(color = "blue", size = 2) +
+  theme_minimal()  + 
+  labs(title="Track number depending on the release year", y="Track Number", x="Release Year")
+year_tracknum
+```
+Little correlation appears from the data.
+
+
+
+## Track Duration
+
+We can now take a look at the track duration, unless mentioned specifically, it should be assumed that the units are milliseconds.
+
+```{r}
+duration_hist <- dataset_clean %>% 
+  drop_na() %>% 
+  mutate(trackDuration = trackDuration/1000) %>% 
+  ggplot(aes(x=trackDuration)) +
+  geom_histogram(bins=50, fill='blue', color='black') +
+  theme_minimal() +
+  labs(title ="Histogram of track durations", x="Track Duration (s)")
+duration_hist
+```
+
+As ca be observed, the distribution is skewed to the left, with a handful of high values, while the remaining values are lower.
+
+We can also observe track duration depending on the release year
+
+```{r}
+median_year <- dataset_clean %>% 
+  drop_na() %>% 
+  group_by(releaseDate) %>% 
+  summarise(median_duration = median(trackDuration, na.rm = TRUE)) %>% 
+  mutate(median_duration = median_duration/1000) %>% 
+  ggplot(aes(y=median_duration, x=releaseDate))+
+  geom_line(color='blue', size=1) + 
+  theme_minimal()+
+  labs(title="Evolution of median track duration by year", y="Median Duration (s)", x="Year")
+median_year %>% ggplotly()
+```
+
+As can be seen a peak is reached in 1992 with a median track duration of 259.8 seconds or 4 minutes and 20 seconds. The recent downward trend is unsurprising, in a day and age, where the number of streams are how artists are paid, and where people are free to skip songs as they see fit, shorter songs become a necessity for artists.
+
+```{r}
+duration_pop <- dataset_clean %>% 
+  drop_na() %>%
+  mutate(trackDuration = trackDuration/1000) %>% 
+  ggplot(aes(y=trackDuration, x=Popularity)) +
+  geom_point(color="blue")
+duration_pop
+```
+
+## Explicit
+
+```{r}
+explicit_year <- dataset_clean %>% 
+  drop_na() %>% 
+  group_by(releaseDate, Explicit) %>%
+  summarise(count = n(), .groups = "drop") %>% 
+  ggplot(aes(x = releaseDate, y = count, fill = as.factor(Explicit))) +
+  geom_area(position = "fill", alpha=0.8) +
+  scale_fill_manual(
+    values = c("TRUE" = "red", "FALSE" = "lightgray"),
+    name = "Explicit",
+    labels = c("FALSE" = "Non-Explicit", "TRUE" = "Explicit")
+  ) +
+  labs(
+    title = "Evolution of Explicit vs. Non-Explicit Songs",
+    x = "Year",
+    y = "Share",
+    fill = "Explicit"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_minimal()
+
+explicit_year
+```
+
+```{r}
+line_explicit <- dataet_clean %>% 
+  
+```
