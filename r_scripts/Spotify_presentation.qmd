@@ -306,7 +306,7 @@ explicit_year <- dataset_clean %>%
   group_by(releaseDate, Explicit) %>%
   summarise(count = n(), .groups = "drop") %>% 
   ggplot(aes(x = releaseDate, y = count, fill = as.factor(Explicit))) +
-  geom_area(position = "fill", alpha=0.8) +
+  geom_area(position = "fill", alpha=0.6) +
   scale_fill_manual(
     values = c("TRUE" = "red", "FALSE" = "lightgray"),
     name = "Explicit",
@@ -325,6 +325,63 @@ explicit_year
 ```
 
 ```{r}
-line_explicit <- dataet_clean %>% 
-  
+line_explicit <- dataset_clean %>% 
+  drop_na() %>% 
+  group_by(releaseDate) %>%
+  summarise(
+    total = n(),
+    explicit_count = sum(Explicit, na.rm = TRUE),
+    explicit_share = explicit_count / total
+  ) %>% 
+  ggplot(aes(x = releaseDate, y = explicit_count)) +
+  geom_line(color = "blue", size = 1) +
+  labs(
+    title = "Share of Explicit Songs Over Time",
+    x = "Year",
+    y = "Share of Explicit Songs"
+  ) +
+  theme_minimal()
+line_explicit
 ```
+
+As can be observed, the share of songs with an explicit mention have taken a bigger share. It should be noted that the mention of explcit songs are to be taken with a grain of salt, as the "Explicit" mentionned is provided by the label uploading the track on spotify, several songs that may have explicit content are sometimes released with a non-explicit version, a good way for artists to ensure that their song may still be played on the radio for example.
+
+```{r}
+explicit_boxplot <- dataset_clean %>% 
+  drop_na() %>% 
+  ggplot(aes(x = as.factor(Explicit), y = Popularity)) +
+  geom_boxplot() +
+  labs(
+    title = "Popularity by Explicit Status",
+    x = "Explicit",
+    y = "Popularity"
+  ) +
+  theme_minimal()
+explicit_boxplot
+```
+
+We can try observing the difference in popularity between explicit and non-explicit songs.
+We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
+
+```{r}
+explicit_popdate <- dataset_clean %>% 
+  drop_na() %>% 
+  ggplot(aes(x = releaseDate, y = Popularity, color=as.factor(Explicit))) +
+  scale_color_manual(
+    values = c("TRUE" = "red", "FALSE" = "blue"),
+    name = "Explicit",
+    labels = c("FALSE" = "Non-Explicit", "TRUE" = "Explicit")
+  ) +
+  geom_point(shape=4) +
+  labs(
+    title = "Popularity by year with explicit status",
+    x = "Release Year",
+    y = "Popularity"
+  ) +
+  theme_minimal()
+   #+ facet_wrap(vars(Explicit))
+explicit_popdate
+```
+
+## Popularity
+
