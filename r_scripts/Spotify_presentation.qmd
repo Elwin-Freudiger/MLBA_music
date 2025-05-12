@@ -21,6 +21,8 @@ View(dataset_raw)
 
 We start by cleaning the data
 
+hello
+
 ```{r}
 dataset_clean <- dataset_raw %>%
   select(-c(`Album Artist URI(s)`,
@@ -117,20 +119,16 @@ st(dataset_clean)
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
-The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* 
-The audio preview below:
-```{=html}
+The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* The audio preview below:
+
 <audio controls>
   <source src="https://p.scdn.co/mp3-preview/2da01a5ad77fddb1bc2b0ed9e138a74eabe43333?cid=9950ac751e34487dbbe027c4fd7f8e99" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
-```
 
-The explicit tag, has a very imbalanced classes with 95% of songs being not explicit. 
-The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33. 
+The explicit tag, has a very imbalanced classes with 95% of songs being not explicit. The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33.
 
 Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
-
 
 ## Correlation matrix
 
@@ -159,9 +157,6 @@ ggcorrplot(
 
 ```
 
-
-
-
 ## Release year
 
 Release year is the dependent variable from our dataset, we take the granularity of years.
@@ -180,9 +175,6 @@ year_hist
 ```
 
 As we can see, our dataset tends to contain more songs released in recent years. Leading to unbalanced data, solving this problem will be discussed in subsequent sections.
-
-
-
 
 ## track numbers
 
@@ -235,9 +227,7 @@ benford
 
 ```
 
-Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs.
-.......
-
+Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs. .......
 
 Lastly, we can take a look at the evolution of track numbers over time.
 
@@ -251,9 +241,8 @@ year_tracknum <- dataset_clean %>%
   labs(title="Track number depending on the release year", y="Track Number", x="Release Year")
 year_tracknum
 ```
+
 Little correlation appears from the data.
-
-
 
 ## Track Duration
 
@@ -360,8 +349,7 @@ explicit_boxplot <- dataset_clean %>%
 explicit_boxplot
 ```
 
-We can try observing the difference in popularity between explicit and non-explicit songs.
-We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
+We can try observing the difference in popularity between explicit and non-explicit songs. We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
 
 ```{r}
 explicit_popdate <- dataset_clean %>% 
@@ -384,4 +372,3 @@ explicit_popdate
 ```
 
 ## Popularity
-
