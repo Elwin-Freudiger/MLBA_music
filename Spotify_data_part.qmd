@@ -23,6 +23,8 @@ library(plotly)
 library(randomForest)
 library(rpart)
 library(rpart.plot)
+library(lubridate)
+library(caret)
 ```
 
 ```{r}
@@ -58,7 +60,7 @@ dim(spotify)
 The dataset is composed of 10.000 entries and 35 columns capturing information about the song popularity, the artist, the release date or the particularities of the music.
 
 | Variable | Description | Category | Example |
-|-----------------|--------------------|-----------------|-----------------|
+|------------------|--------------------|------------------|------------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
@@ -288,7 +290,7 @@ corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
 
 ```
 
-## Supervised learning 
+## Supervised learning
 
 ### Linear regression
 
@@ -333,7 +335,7 @@ Residual Standard Error (31.15): Average prediction error is about 31 years.
 
 F-statistic (p \< 2.2e-16): The model as a whole is statistically significant.
 
-### Random Forest on release year 
+### Random Forest on release year
 
 ```{r}
 # Filter relevant features and remove missing values
@@ -434,4 +436,77 @@ tree_model <- rpart(year ~ .,
 
 # Plot the tree
 rpart.plot(tree_model, type = 2, extra = 101, main = "Regression Tree - Year")
+```
+
+### **Decade Analysis**
+
+```{r}
+spotify_dec<- spotify_clean %>%
+  mutate(
+    release_date = ymd(release_date),  # Convert to Date
+    release_year = year(release_date),
+    decade = paste0(floor(release_year / 10) * 10, "s")
+  )
+
+spotify_dec %>%
+  count(decade, sort = TRUE)
+```
+
+```{r}
+spotify_dec <- spotify %>%
+  mutate(release_date = lubridate::ymd(release_date)) %>%
+  filter(!is.na(release_date)) %>%  # <- ici on enlève les dates illisibles
+  mutate(
+    release_year = lubridate::year(release_date),
+    decade = paste0(floor(release_year / 10) * 10, "s"),
+    decade = case_when(
+      decade %in% c("1950s", "1960s", "1970s") ~ "1950s–1970s",
+      TRUE ~ decade
+    )
+  )
+
+spotify_dec %>%
+  count(decade, sort = TRUE)
+```
+
+```{r}
+features <- c("danceability", "energy", "acousticness", "instrumentalness",
+              "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
+
+df <- spotify_dec %>%
+  select(all_of(features), decade) %>%
+  mutate(decade = as.factor(decade)) %>%
+  na.omit()
+
+# Train/test split
+set.seed(123)
+train_idx <- sample(seq_len(nrow(df)), size = 0.8 * nrow(df))
+train <- df[train_idx, ]
+test <- df[-train_idx, ]
+
+# Fit model
+rf_model <- randomForest(decade ~ ., data = train)
+
+# Predict
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+mean(pred == test$decade)
+
+```
+
+```{r}
+library(caret)
+
+# Predictions on training data
+pred_train <- predict(rf_model, newdata = train)
+conf_train <- confusionMatrix(pred_train, train$decade)
+
+# Predictions on test data
+pred_test <- predict(rf_model, newdata = test)
+conf_test <- confusionMatrix(pred_test, test$decade)
+
+# Display both beautiful confusion matrices
+conf_train
+conf_test
 ```
