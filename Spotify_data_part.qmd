@@ -55,7 +55,7 @@ dim(spotify)
 The dataset is composed of 10.000 entries and 35 columns capturing informations about the song popularity, the artist, the release date or the particularities of the music.
 
 | Variable | Description | Category | Example |
-|-----------------|---------------------|-----------------|-----------------|
+|------------------|--------------------|------------------|------------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
