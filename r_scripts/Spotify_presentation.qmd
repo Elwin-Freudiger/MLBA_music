@@ -1,119 +1,299 @@
 ---
-title: "Spotify_presentation"
+title: "ML Spotify"
 format: html
 editor: visual
 ---
 
-```{r, echo=FALSE}
+```{r}
+#| echo: false
+#| message: false
+
+library(knitr)
 library(tidyverse)
-library(vtable)
-library(stringr)
-library(ggplot2)
-library(ggcorrplot)
+library(kableExtra)
+library(broom)
+library(reshape2)
+library(magrittr)
+library(corrplot)
 library(plotly)
+library(ggcorrplot)
+library(factoextra)
+library(FactoMineR)
 ```
 
 ```{r}
-#download the data
-dataset_raw <- read_csv("top_10000_1950-now.csv", show_col_types = FALSE)
-View(dataset_raw)
+#| echo: false
+
+spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
-We start by cleaning the data
+## Introduction
+
+### Project Goals
+
+### Research Questions
+
+### Adjustments or Refinements
+
+## Data
+
+### Sources
+
+Kaggle
+
+The "Top 10000 Spotify Songs - ARIA and Billboard Charts" is a comprehensive collection of 10,000 of the most popular songs that have dominated the music scene from the 1950 to the present day. This dataset was curated based on rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts, ensuring a diverse representation of songs that have achieved immense commercial success and cultural significance.
+
+The dataset encompasses various music genres and showcases the evolution of musical trends over the years, providing valuable insights into the ever-changing landscape of popular music. It includes tracks from iconic artists and bands, representing a mix of timeless classics and contemporary hits that have left a lasting impact on music lovers worldwide.
+
+### Description
 
 ```{r}
-dataset_clean <- dataset_raw %>%
-  select(-c(`Album Artist URI(s)`,
-            `Album Artist Name(s)`,
-            `Disc Number`, `ISRC`, 
-            `Added By`, 
-            `Added At`, 
-            `Album Genres`, 
-            `Copyrights`)
-         ) %>%
-  rename(trackID = `Track URI`,
-         trackName = `Track Name`,
-         artistID = `Artist URI(s)`,
-         artistName = `Artist Name(s)`,
-         releaseDate = `Album Release Date`,
-         imageURL = `Album Image URL`,
-         trackNumber = `Track Number`,
-         trackDuration = `Track Duration (ms)`,
-         previewURL = `Track Preview URL`,
-         artistGenres = `Artist Genres`,
-         timeSignature = `Time Signature`
-         ) %>%
-  mutate(releaseDate = str_sub(releaseDate, 1, 4)) %>% drop_na(releaseDate) %>%
-  mutate(releaseDate = as.numeric(releaseDate))
+dim(spotify)
+```
+
+The dataset is composed of 10.000 entries and 35 columns capturing informations about the song popularity, the artist, the release date or the particularities of the music.
+
+| Variable | Description | Category | Example |
+|------------------|--------------------|------------------|------------------|
+| track_uri | Unique identifier for the track | character | spotify:track:123... |
+| track_name | Name of the track | character | Bohemian Rhapsody |
+| artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
+| artist_names | Name(s) of the performing artist(s) | character | Queen |
+| album_uri | Unique identifier for the album | character | spotify:album:def... |
+| album_name | Title of the album | character | A Night at the Opera |
+| album_artist_uris | URIs of the album's main artist(s) | character | spotify:artist:abc... |
+| album_artist_names | Name(s) of the album's main artist(s) | character | Queen |
+| release_date | Date the album was released | date | 1975-11-21 |
+| album_image_url | Link to album cover image | character | https://i.scdn.co/image/... |
+| disc_number | Disc number of the track in multi-disc sets | numeric | 1 |
+| track_number | Track's position on the disc | numeric | 11 |
+| duration_ms | Length of the track in milliseconds | numeric | 354000 |
+| preview_url | URL to 30-second preview of the track | character | https://p.scdn.co/mp3-preview/... |
+| is_explicit | Indicates if track has explicit content | logical | TRUE |
+| popularity | Spotify popularity score (0-100) | integer | 85 |
+| isrc | International Standard Recording Code | character | GBUM71029604 |
+| added_by | User who added the track to playlist | character | user_id_123 |
+| added_at | Timestamp when track was added | datetime | 2022-07-15T12:00:00Z |
+| artist_genres | Genres associated with the artist(s) | character | rock, classic rock |
+| danceability | How suitable a track is for dancing | numeric | 0.6 |
+| energy | Intensity and activity level of the track | numeric | 0.85 |
+| key | Musical key of the track (0=C, 1=C♯, ...) | integer | 5 |
+| loudness | Overall loudness in decibels | numeric | -5.3 |
+| mode | Modality: major (1) or minor (0) | integer | 1 |
+| speechiness | Presence of spoken words in the track | numeric | 0.05 |
+| acousticness | Confidence that track is acoustic | numeric | 0.02 |
+| instrumentalness | Likelihood that track is instrumental | numeric | 0.001 |
+| liveness | Likelihood of live audience presence | numeric | 0.09 |
+| valence | Musical positiveness conveyed | numeric | 0.7 |
+| tempo | Beats per minute (BPM) | numeric | 120.5 |
+| time_signature | Estimated time signature | integer | 4 |
+| album_genres | Genres associated with the album | character | rock, progressive rock |
+| label | Record label | character | EMI |
+| copyrights | Copyright info for the album or track | character | ℗ 1975 Queen Productions Ltd. |
+
+```{r}
+#| echo: false
+
+# Preview the dataset
+knitr::kable(head(spotify), 
+             format = "markdown", 
+             align = 'c', 
+             table.attr = 'class="table table-bordered"',
+             row.names = FALSE) %>%
+  kable_styling(font_size = 10, full_width = FALSE, position = "center")
+
+```
+
+### Wrangling / Cleaning
+
+Rename all variables and than delete the unnecessary one.
+
+```{r}
+spotify <- spotify |>
+  rename(
+    track_uri            = `Track URI`,
+    track_name           = `Track Name`,
+    artist_uris          = `Artist URI(s)`,
+    artist_names         = `Artist Name(s)`,
+    album_uri            = `Album URI`,
+    album_name           = `Album Name`,
+    album_artist_uris    = `Album Artist URI(s)`,
+    album_artist_names   = `Album Artist Name(s)`,
+    release_date         = `Album Release Date`,
+    album_image_url      = `Album Image URL`,
+    disc_number          = `Disc Number`,
+    track_number         = `Track Number`,
+    duration_ms          = `Track Duration (ms)`,
+    preview_url          = `Track Preview URL`,
+    is_explicit          = `Explicit`,
+    popularity           = `Popularity`,
+    isrc                 = `ISRC`,
+    added_by             = `Added By`,
+    added_at             = `Added At`,
+    artist_genres        = `Artist Genres`,
+    danceability         = `Danceability`,
+    energy               = `Energy`,
+    key                  = `Key`,
+    loudness             = `Loudness`,
+    mode                 = `Mode`,
+    speechiness          = `Speechiness`,
+    acousticness         = `Acousticness`,
+    instrumentalness     = `Instrumentalness`,
+    liveness             = `Liveness`,
+    valence              = `Valence`,
+    tempo                = `Tempo`,
+    time_signature       = `Time Signature`,
+    album_genres         = `Album Genres`,
+    label                = `Label`,
+    copyrights           = `Copyrights`
+  )
+```
+
+```{r}
+spotify_vr <- spotify |>
+  select(-artist_uris, -album_uri,-album_artist_uris,-album_artist_names, -disc_number,-preview_url, -isrc, -added_by, -added_at, -album_genres, -copyrights,-key)
+
+ncol(spotify_vr)
+```
+
+We have now a data set with 23 columns.
+
+We only keep the ID from the URL:
+
+```{r}
+library(dplyr)
+library(stringr)
+
+spotify_vr <- spotify_vr |>
+  mutate(track_uri = str_extract(track_uri, "[^:]+$"))
+```
+
+```{r}
+#| echo: false
+
+# Preview the dataset
+knitr::kable(head(spotify_vr), 
+             format = "markdown", 
+             align = 'c', 
+             table.attr = 'class="table table-bordered"',
+             row.names = FALSE) %>%
+  kable_styling(font_size = 10, full_width = FALSE, position = "center")
+```
+
+### Spotting Mistakes and Missing Data
+
+The dataset have a total of 625 missing values, including 551 for the 'artist_genres'.
+
+We are going to drop the instance with missing feature about the music.
+
+```{r}
+# Count total missing values
+sum(is.na(spotify_vr))  # This will return the total number of NAs
+
+# Show missing values per column
+colSums(is.na(spotify_vr))
+
+#Rows with missing values
+rows_with_missing <- spotify_vr |>
+  filter(if_any(everything(), ~ is.na(.) | . == ""))
+
+# View the rows
+rows_with_missing
+
+dataset_clean <- spotify_vr |>
+  filter(!is.na(loudness) & loudness != "") %>% 
+  mutate(release_year = as.numeric(substr(release_date, start = 1, stop = 4)))
+
+colSums(is.na(dataset_clean))
+
+```
+
+### Listing Anomalies and Outliers
+
+```{r}
+numeric_data <- dataset_clean %>% select(where(is.numeric)) |>
+  select(-mode,-time_signature)
+
+long_data <- pivot_longer(numeric_data, cols = everything(), names_to = "Variable", values_to = "Value")
+
+# Faceted boxplots with individual y-axis scales
+ggplot(long_data, aes(x = "", y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~ Variable, scales = "free_y") +
+  labs(title = "Boxplots for Numeric Variables (Individual Scales)", x = "", y = "") +
+  theme_minimal()
+```
+
+**Interpretation:**
+
+Acousticness, energy, danceability, instrumentalness, liveness, valence, speechiness:
+
+-   Most values lie between 0 and 1 (bounded variables).
+
+-   Many of them (like instrumentalness, speechiness) show long tails or outliers close to 1.
+
+-   These suggest that although the average track is not instrumental or speech-heavy, some are strongly so.
+
+Duration_ms:
+
+-   Slightly skewed with a few long-duration tracks (outliers).
+
+-   Most tracks are tightly clustered around the median.
+
+loudness:
+
+-   Negative values (typical, as loudness in dB is relative to silence).
+
+-   Distribution is tight with some strong outliers at low values (very quiet or dynamic tracks).
+
+popularity:
+
+-   Fairly spread out with a few outliers, indicating some tracks are much more/less popular than typical.
+
+tempo:
+
+-   High variance with outliers—some songs have extremely fast tempos.
+
+-   This might include errors or experimental tracks.
+
+track_number:
+
+Most tracks are near the beginning of an album (track 1–10).
+
+Outliers indicate albums with many tracks or incorrectly labeled track numbers.
+
+### Summary statistics
+
+```{r}
+# Summary statistics for key numeric features
+dataset_clean %>%
+  select_if(is.numeric) %>%
+  summary() %>%
+  kable() %>%
+  kable_styling()
+
+```
+
+### Correlation Matrix
+
+```{r}
+spotify_num <- dataset_clean %>%
+  select_if(is.numeric) %>%
+  na.omit()
+
+corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
+
 ```
 
 # Exploratory Data Analysis
 
 ## Table description
 
-```{r}
-library(knitr)
-
-table_data <- data.frame(
-  Column_Name = c(
-    "trackDuration", "Popularity", "Danceability", "Energy", "Key", 
-    "Loudness", "Mode", "Speechiness", "Acousticness", "Instrumentalness", 
-    "Liveness", "Valence", "Tempo", "timeSignature", "trackID", 
-    "trackName", "artistID", "artistName", "Album URI", "Album Name", 
-    "releaseDate", "imageURL", "trackNumber", "previewURL", "Explicit", 
-    "artistGenres", "Label"
-  ),
-  Description = c(
-    "Duration of the track",
-    "Popularity score from Spotify (0–100)",
-    "Danceability score",
-    "Energy score",
-    "Musical key (0–11, where C = 0, C#/Db = 1, …)",
-    "Overall loudness",
-    "Modality (1 = major, 0 = minor)",
-    "Presence of spoken words",
-    "Acoustic character",
-    "Instrumental likelihood",
-    "Likelihood track was recorded live",
-    "Musical positivity",
-    "Beats per minute",
-    "Time signature (beats per bar)",
-    "Unique identifier for the track",
-    "Name of the song",
-    "Unique identifier for the artist",
-    "Name of the artist",
-    "Unique Spotify album URI",
-    "Name of the album",
-    "Release date of the track",
-    "URL of the album or track cover image",
-    "Track number on the album",
-    "URL for 30s audio preview",
-    "Whether the track contains explicit content",
-    "Genres associated with the artist",
-    "Record label"
-  ),
-  Units = c(
-    "milliseconds", "score (0–100)", "0–1 (dimensionless)", "0–1 (dimensionless)", 
-    "integer (0–11)", "decibels (dB)", "binary (0/1)", "0–1 (dimensionless)", 
-    "0–1 (dimensionless)", "0–1 (dimensionless)", "0–1 (dimensionless)", 
-    "0–1 (dimensionless)", "BPM", "integer", "string", "string", "string", 
-    "string", "string", "string", "date (YYYY-MM-DD)", "string (URL)", 
-    "integer", "string (URL)", "TRUE/FALSE", "string/list", "string"
-  )
-)
-
-kable(table_data, caption = "Description of Track Dataset Variables")
-```
-
 For this data analysis, we will see different graphs....
 
 ## Summary statistics
 
 The following table shows summary statistics. of several variables
-
-```{r}
-st(dataset_clean)
-```
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
@@ -126,10 +306,10 @@ The audio preview below:
 </audio>
 ```
 
-The explicit tag, has a very imbalanced classes with 95% of songs being not explicit. 
+The explicit tag, has a very imbalanced classes with 95% of songs being not is_explicit. 
 The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33. 
 
-Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
+danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
 
 
 ## Correlation matrix
@@ -137,7 +317,7 @@ Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrument
 ```{r}
 #start by selecting numeric columns
 num_dataset <- dataset_clean %>% 
-  select(c(releaseDate, trackNumber, trackDuration, Explicit, Popularity, Danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature))
+  select_if(is.numeric)
 
 cor_matrix <- cor(num_dataset, use = "complete.obs")
 
@@ -169,9 +349,9 @@ Release year is the dependent variable from our dataset, we take the granularity
 ```{r}
 #adding a histogram with songs by year
 year_hist <- dataset_clean %>% 
-  select(releaseDate) %>%
-  filter(releaseDate>0) %>%
-  ggplot(aes(x=releaseDate)) +
+  select(release_year) %>%
+  filter(release_year>0) %>%
+  ggplot(aes(x=release_year)) +
   geom_histogram(binwidth = 1, fill="blue", color="black") +
   theme_minimal() +
   labs(title = "Number of songs by release year", x="Year") 
@@ -188,8 +368,8 @@ As we can see, our dataset tends to contain more songs released in recent years.
 
 ```{r}
 track_dens <- dataset_clean %>% 
-  filter(trackNumber!=0) %>% 
-  ggplot(aes(x=trackNumber)) +
+  filter(track_number!=0) %>% 
+  ggplot(aes(x=track_number)) +
   geom_histogram(fill='blue', color='black') + 
   theme_minimal() +
   labs(title = "Track number density", y="Density", x="track number")
@@ -208,8 +388,8 @@ benford_distr <- data.frame(
 )
 
 benford <- dataset_clean %>% 
-  filter(trackNumber!=0) %>% 
-  mutate(first_digit = as.numeric(substr(as.character(trackNumber), 1, 1))) %>% 
+  filter(track_number!=0) %>% 
+  mutate(first_digit = as.numeric(substr(as.character(track_number), 1, 1))) %>% 
   ggplot(aes(x = first_digit)) +
   geom_histogram(
     bins = 9,
@@ -243,9 +423,9 @@ Lastly, we can take a look at the evolution of track numbers over time.
 
 ```{r}
 year_tracknum <- dataset_clean %>% 
-  filter(releaseDate!=0,
-         trackNumber!=0) %>% 
-  ggplot(aes(x=releaseDate, y=trackNumber)) +
+  filter(release_year!=0,
+         track_number!=0) %>% 
+  ggplot(aes(x=release_year, y=track_number)) +
   geom_point(color = "blue", size = 2) +
   theme_minimal()  + 
   labs(title="Track number depending on the release year", y="Track Number", x="Release Year")
@@ -262,8 +442,8 @@ We can now take a look at the track duration, unless mentioned specifically, it 
 ```{r}
 duration_hist <- dataset_clean %>% 
   drop_na() %>% 
-  mutate(trackDuration = trackDuration/1000) %>% 
-  ggplot(aes(x=trackDuration)) +
+  mutate(duration_ms = duration_ms/1000) %>% 
+  ggplot(aes(x=duration_ms)) +
   geom_histogram(bins=50, fill='blue', color='black') +
   theme_minimal() +
   labs(title ="Histogram of track durations", x="Track Duration (s)")
@@ -277,14 +457,14 @@ We can also observe track duration depending on the release year
 ```{r}
 median_year <- dataset_clean %>% 
   drop_na() %>% 
-  group_by(releaseDate) %>% 
-  summarise(median_duration = median(trackDuration, na.rm = TRUE)) %>% 
+  group_by(release_year) %>% 
+  summarise(median_duration = median(duration_ms, na.rm = TRUE)) %>% 
   mutate(median_duration = median_duration/1000) %>% 
-  ggplot(aes(y=median_duration, x=releaseDate))+
+  ggplot(aes(y=median_duration, x=release_year))+
   geom_line(color='blue', size=1) + 
   theme_minimal()+
   labs(title="Evolution of median track duration by year", y="Median Duration (s)", x="Year")
-median_year %>% ggplotly()
+median_year
 ```
 
 As can be seen a peak is reached in 1992 with a median track duration of 259.8 seconds or 4 minutes and 20 seconds. The recent downward trend is unsurprising, in a day and age, where the number of streams are how artists are paid, and where people are free to skip songs as they see fit, shorter songs become a necessity for artists.
@@ -292,20 +472,20 @@ As can be seen a peak is reached in 1992 with a median track duration of 259.8 s
 ```{r}
 duration_pop <- dataset_clean %>% 
   drop_na() %>%
-  mutate(trackDuration = trackDuration/1000) %>% 
-  ggplot(aes(y=trackDuration, x=Popularity)) +
+  mutate(duration_ms = duration_ms/1000) %>% 
+  ggplot(aes(y=duration_ms, x=popularity)) +
   geom_point(color="blue")
 duration_pop
 ```
 
-## Explicit
+## is_explicit
 
 ```{r}
 explicit_year <- dataset_clean %>% 
   drop_na() %>% 
-  group_by(releaseDate, Explicit) %>%
+  group_by(release_year, is_explicit) %>%
   summarise(count = n(), .groups = "drop") %>% 
-  ggplot(aes(x = releaseDate, y = count, fill = as.factor(Explicit))) +
+  ggplot(aes(x = release_year, y = count, fill = as.factor(is_explicit))) +
   geom_area(position = "fill", alpha=0.6) +
   scale_fill_manual(
     values = c("TRUE" = "red", "FALSE" = "lightgray"),
@@ -327,13 +507,13 @@ explicit_year
 ```{r}
 line_explicit <- dataset_clean %>% 
   drop_na() %>% 
-  group_by(releaseDate) %>%
+  group_by(release_year) %>%
   summarise(
     total = n(),
-    explicit_count = sum(Explicit, na.rm = TRUE),
+    explicit_count = sum(is_explicit, na.rm = TRUE),
     explicit_share = explicit_count / total
   ) %>% 
-  ggplot(aes(x = releaseDate, y = explicit_count)) +
+  ggplot(aes(x = release_year, y = explicit_count)) +
   geom_line(color = "blue", size = 1) +
   labs(
     title = "Share of Explicit Songs Over Time",
@@ -349,7 +529,7 @@ As can be observed, the share of songs with an explicit mention have taken a big
 ```{r}
 explicit_boxplot <- dataset_clean %>% 
   drop_na() %>% 
-  ggplot(aes(x = as.factor(Explicit), y = Popularity)) +
+  ggplot(aes(x = as.factor(is_explicit), y = popularity)) +
   geom_boxplot() +
   labs(
     title = "Popularity by Explicit Status",
@@ -366,22 +546,312 @@ We observe that Explicit songs are more popular. This correlation may also be du
 ```{r}
 explicit_popdate <- dataset_clean %>% 
   drop_na() %>% 
-  ggplot(aes(x = releaseDate, y = Popularity, color=as.factor(Explicit))) +
+  ggplot(aes(x = release_year, y = popularity, color=as.factor(is_explicit))) +
   scale_color_manual(
     values = c("TRUE" = "red", "FALSE" = "blue"),
     name = "Explicit",
     labels = c("FALSE" = "Non-Explicit", "TRUE" = "Explicit")
   ) +
-  geom_point(shape=4) +
+  geom_point() +
   labs(
     title = "Popularity by year with explicit status",
     x = "Release Year",
     y = "Popularity"
   ) +
   theme_minimal()
-   #+ facet_wrap(vars(Explicit))
+   #+ facet_wrap(vars(is_explicit))
 explicit_popdate
 ```
 
 ## Popularity
+
+Popularity as a metric yields meaningful insights into songs. The formula used to define popularity is not public knowledge. But, we can make the assumption that it includes in one shape or form the number of streams in a certain timeframe. 
+
+```{r}
+# Summary statistics for key numeric features
+dataset_clean %>%
+  select(track_name, artist_names, popularity) %>% 
+  arrange(desc(popularity)) %>%
+  head() %>% 
+  kable() %>%
+  kable_styling()
+
+```
+
+it should be noted that the dataset was updated last in October 2024. Therefore, popularity metrics may have changed. Popularity values provide a snapshot of the popularity of a song a a certain time. Nevertheless, these change will have no impact on our study.
+
+```{r}
+avg_pop_date <- dataset_clean %>% 
+  drop_na() %>% 
+  group_by(release_year) %>% 
+  summarise(avg_pop = mean(popularity, na.rm = TRUE)) %>%
+  ggplot(aes(y=avg_pop, x=release_year))+
+  geom_line(color='blue', size=1) + 
+  theme_minimal()+
+  labs(title="Evolution of mean popularity by year", y="Popularity", x="Year")
+avg_pop_date
+```
+
+As can be seen, it appears that the average popularity is high in the beginning and the end of our study. 
+
+While the observation that recent songs are more popular is not surprising, the high popularity of songs from the 60s is. One theory could be that these songs are still considered popular and worth adding into a playlist or rankings, they remain popular to this very day. One may think of the Beatles for example, which despite being released in the 1960s still remain popular among a wide public.
+
+## Text mining
+```{r}
+# Separate multiple artists
+top_artists <- dataset_clean %>%
+  filter(!is.na(artist_names)) %>%
+  mutate(artist_names = str_split(artist_names, ",")) %>%
+  unnest(artist_names) %>%
+  mutate(artist_names = str_trim(artist_names)) %>%
+  count(artist_names, sort = TRUE) %>%
+  slice_head(n = 30)
+
+# Plot
+artist_bar <- ggplot(top_artists, aes(x = reorder(artist_names, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 30 Artists by Song Count",
+    x = "Artist",
+    y = "Number of Songs"
+  ) +
+  theme_minimal()
+artist_bar
+```
+
+```{r}
+artist_pop <- dataset_clean %>%
+  filter(!is.na(artist_names)) %>%
+  mutate(artist_names = str_split(artist_names, ",")) %>%
+  unnest(artist_names) %>%
+  mutate(artist_names = str_trim(artist_names)) %>%
+  group_by(artist_names) %>% 
+  summarise(avg_pop = mean(popularity, na.rm = TRUE)) %>%
+  arrange(desc(avg_pop)) %>%
+  slice_head(n=10) %>% 
+  kable() %>%
+  kable_styling()
+artist_pop
+```
+
+
+```{r}
+artist_len <- dataset_clean %>%
+  filter(!is.na(artist_names)) %>%
+  mutate(artist_names = str_split(artist_names, ",")) %>%
+  unnest(artist_names) %>%
+  mutate(artist_names = str_trim(artist_names)) %>%
+  group_by(artist_names) %>% 
+  summarise(avg_time = mean(duration_ms, na.rm = TRUE)) %>%
+  arrange(desc(avg_time)) %>%
+  slice_head(n=10) %>% 
+  kable() %>%
+  kable_styling()
+artist_len
+```
+
+```{r}
+artist_len_inc <- dataset_clean %>%
+  filter(!is.na(artist_names)) %>%
+  mutate(artist_names = str_split(artist_names, ",")) %>%
+  unnest(artist_names) %>%
+  mutate(artist_names = str_trim(artist_names)) %>%
+  group_by(artist_names) %>% 
+  summarise(avg_time = mean(duration_ms, na.rm = TRUE)) %>%
+  arrange(avg_time) %>%
+  slice_head(n=10) %>% 
+  kable() %>%
+  kable_styling()
+artist_len_inc
+```
+
+
+##genres
+
+```{r}
+top_genres <- dataset_clean %>%
+  mutate(artist_genres = replace_na(artist_genres, "No genre")) %>% 
+  filter(!is.na(artist_genres)) %>%
+  mutate(artist_genres = str_split(artist_genres, ",")) %>%
+  unnest(artist_genres) %>%
+  mutate(artist_genres = str_trim(artist_genres)) %>%
+  count(artist_genres, sort = TRUE) %>%
+  slice_head(n = 20)
+
+# Plot
+genre_bar <- ggplot(top_genres, aes(x = reorder(artist_genres, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 20 Genres by Song Count",
+    x = "Genre",
+    y = "Number of Songs"
+  ) +
+  theme_minimal()
+genre_bar
+```
+
+
+
+
+```{r}
+genre_pop <- dataset_clean %>%
+  mutate(artist_genres = replace_na(artist_genres, "No genre")) %>% 
+  filter(!is.na(artist_genres)) %>%
+  mutate(artist_genres = str_split(artist_genres, ",")) %>%
+  unnest(artist_genres) %>%
+  mutate(artist_genres = str_trim(artist_genres)) %>%
+  group_by(artist_genres) %>% 
+  summarise(avg_pop= mean(popularity, na.rm = TRUE)) %>%
+  arrange(desc(avg_pop)) %>%
+  slice_head(n=10) %>% 
+  kable() %>%
+  kable_styling()
+  
+genre_pop
+```
+
+#Clustering
+
+```{r}
+clustering_data <- dataset_clean %>% 
+  select(c(where(is.numeric), is_explicit)) %>% 
+  select(-c(release_year)) %>% 
+  drop_na() %>% 
+  scale()
+```
+
+##K-means clustering
+
+We'll start by fitting a k-means clustering. First, we need to determine the optimal number of clusters to use. 
+
+```{r}
+fviz_nbclust(clustering_data,
+             kmeans,
+             method='wss',
+             k.max = 100,
+             verbose = FALSE)
+
+```
+As can be seen, the elbow seems to converge at around 5 clusters. We will therefore, take this as our number of clusters.
+
+```{r}
+song_km <- kmeans(clustering_data, centers=30)
+```
+
+To inspect these clusters we will start by having boxplots
+```{r}
+song_comp <- data.frame(clustering_data, 
+                        Clust=factor(song_km$cluster),
+                        Id=row.names(dataset_clean))
+song_df <- melt(song_comp, id=c("Id", "Clust"))
+head(song_df, 10)
+
+ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable)
+```
+
+As can be seen, no pattern seems to emerge from the k-means clustering. We may still attempt to have hierarchical clustering.
+
+## Hierearchical clustering
+
+```{r}
+song_distances <- dist(clustering_data, method = "manhattan")
+song_melt <- melt(as.matrix(song_distances)) 
+head(song_melt)
+```
+
+
+
+```{r}
+song_hc <- hclust(song_distances, method="complete")
+```
+
+```{r}
+plot(song_hc, hang=-1)
+rect.hclust(song_hc, k=13)
+song_clust_hc <- cutree(song_hc, k=13)
+song_clust_hc
+```
+Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way. 
+
+
+#PCA
+```{r}
+# 1. Prepare numeric data and keep release_year for color
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+# 2. Run PCA on everything except release_year
+pca_result <- prcomp(pca_data, scale. = TRUE)
+
+# 3. Extract PCA scores and add release year for coloring
+pca_scores <- as.data.frame(pca_result$x[, 1:2])
+release_years <- 
+
+pca_scores <- pca_scores %>% 
+  mutate(release_year = dataset_clean$release_year)
+
+# 4. Extract loading for arrows
+loadings <- as.data.frame(pca_result$rotation[, 1:2])
+loadings$variable <- rownames(loadings)
+
+# 5. Plot PCA with arrows and color by release year
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
+  geom_point(alpha = 0.6) +
+  scale_color_viridis_c(option = "plasma") +
+  geom_segment(data = loadings,
+               aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5),  # arrows, scaled
+               arrow = arrow(length = unit(0.2, "cm")), color = "gray30") +
+  geom_text(data = loadings,
+            aes(x = PC1 * 5.3, y = PC2 * 5.3, label = variable),
+            size = 3, color = "gray20") +
+  labs(
+    title = "PCA Biplot of Song Features",
+    x = "PC1",
+    y = "PC2",
+    color = "Release Year"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+songs_pca
+```
+
+```{r}
+fviz_pca_var(songs_pca)
+```
+
+```{r}
+fviz_contrib(songs_pca, choice = "var", axes = 1)
+```
+
+```{r}
+fviz_pca_biplot(songs_pca)
+```
+
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+```{r}
+library(gridExtra)
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
 
