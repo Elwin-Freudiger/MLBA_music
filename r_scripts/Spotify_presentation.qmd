@@ -27,6 +27,7 @@ library(FactoMineR)
 spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
+
 ## Introduction
 
 ### Project Goals
