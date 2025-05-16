@@ -1,0 +1,256 @@
+---
+title: "Random forest"
+format: html
+editor: visual
+---
+
+## Random Forest Balanced
+
+```{r}
+#| echo: false
+#| message: false
+
+library(knitr)
+library(tidyverse)
+library(kableExtra)
+library(broom)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(magrittr)
+library(corrplot)
+library(plotly)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(lubridate)
+library(caret)
+library(rsample)
+```
+
+```{r}
+#| echo: false
+
+spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+```
+
+```{r}
+spotify <- spotify |>
+  rename(
+    track_uri            = `Track URI`,
+    track_name           = `Track Name`,
+    artist_uris          = `Artist URI(s)`,
+    artist_names         = `Artist Name(s)`,
+    album_uri            = `Album URI`,
+    album_name           = `Album Name`,
+    album_artist_uris    = `Album Artist URI(s)`,
+    album_artist_names   = `Album Artist Name(s)`,
+    release_date         = `Album Release Date`,
+    album_image_url      = `Album Image URL`,
+    disc_number          = `Disc Number`,
+    track_number         = `Track Number`,
+    duration_ms          = `Track Duration (ms)`,
+    preview_url          = `Track Preview URL`,
+    is_explicit          = `Explicit`,
+    popularity           = `Popularity`,
+    isrc                 = `ISRC`,
+    added_by             = `Added By`,
+    added_at             = `Added At`,
+    artist_genres        = `Artist Genres`,
+    danceability         = `Danceability`,
+    energy               = `Energy`,
+    key                  = `Key`,
+    loudness             = `Loudness`,
+    mode                 = `Mode`,
+    speechiness          = `Speechiness`,
+    acousticness         = `Acousticness`,
+    instrumentalness     = `Instrumentalness`,
+    liveness             = `Liveness`,
+    valence              = `Valence`,
+    tempo                = `Tempo`,
+    time_signature       = `Time Signature`,
+    album_genres         = `Album Genres`,
+    label                = `Label`,
+    copyrights           = `Copyrights`
+  )
+```
+
+```{r}
+spotify_vr <- spotify |>
+  select(-artist_uris, -album_uri,-album_artist_uris,-album_artist_names, -disc_number,-preview_url, -isrc, -added_by, -added_at, -album_genres, -copyrights,-key)
+
+ncol(spotify_vr)
+```
+
+```{r}
+# Count total missing values
+sum(is.na(spotify_vr))  # This will return the total number of NAs
+
+# Show missing values per column
+colSums(is.na(spotify_vr))
+
+#Rows with missing values
+rows_with_missing <- spotify_vr |>
+  filter(if_any(everything(), ~ is.na(.) | . == ""))
+
+# View the rows
+rows_with_missing
+
+spotify_clean <- spotify_vr |>
+  filter(!is.na(loudness) & loudness != "")
+
+colSums(is.na(spotify_clean))
+```
+
+## Random Forest with undersampling
+
+```{r}
+spotify_dec <- spotify_clean |>
+  mutate(
+    year = as.numeric(substr(release_date, 1, 4)),
+    decade = floor(year / 10) * 10
+  )
+
+spotify_dec %>%
+  count(decade, sort = TRUE)
+```
+
+```{r}
+spotify_cleaned <- spotify_dec %>%
+  filter(decade != 0)
+
+spotify_grouped <- spotify_cleaned %>%
+  mutate(
+    decade_group = case_when(
+      decade %in% c(1950, 1960) ~ "1950–1960",
+      TRUE ~ as.character(decade)
+    )
+  )
+
+spotify_grouped %>%
+  count(decade_group, sort = TRUE)
+```
+
+```{r}
+# Trouver la taille du plus petit groupe
+min_n <- spotify_grouped |>
+  count(decade_group) |>
+  summarise(min_n = min(n)) |>
+  pull(min_n)
+
+# Échantillonnage équilibré
+spotify_balanced <- spotify_grouped |>
+  group_by(decade_group) |>
+  slice_sample(n = min_n) |>
+  ungroup()
+
+spotify_balanced %>%
+  count(decade_group, sort = TRUE)
+```
+
+```{r}
+features <- c("danceability", "energy", "acousticness", "instrumentalness",
+              "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
+
+df <- spotify_balanced |>
+  select(all_of(features), decade_group) |>
+  rename(decade = decade_group) |>
+  mutate(decade = as.factor(decade)) |>
+  na.omit()
+
+split <- initial_split(df, prop = 0.8, strata = decade)
+train <- training(split)
+test <- testing(split)
+
+# Fit model
+rf_model <- randomForest(decade ~ ., data = train)
+
+# Predict
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+mean(pred == test$decade)
+```
+
+```{r}
+# Predictions
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+accuracy <- mean(pred == test$decade)
+print(accuracy)
+
+# Confusion Matrix
+confusionMatrix(pred, test$decade)
+```
+
+**Accuracy** (0.410): correctly predict the decade 41% of the time
+
+**Kappa** (0.312): Fair agreement beyond chance, barely acceptable
+
+**P-value** (\< 2e-16): Statistically better than random guessing
+
+**No Info Rate** (14.3%): Baseline accuracy if you predicted the majority
+
+## Random Forest on median year
+
+```{r}
+spotify_clean <- spotify_clean |>
+  mutate(year = as.numeric(substr(release_date, 1, 4)))
+
+# Calculate and display the median
+median_year <- median(spotify_dec$year, na.rm = TRUE)
+print(median_year)
+
+spotify_binary <- spotify_clean |>
+  mutate(
+    after_median = if_else(year > median(year, na.rm = TRUE), "after", "before"),
+    after_median = as.factor(after_median)
+  )
+```
+
+The median song was release in 2007. We are going to perform a random forest on wether the song was release before or after this year.
+
+```{r}
+features <- c("danceability", "energy", "acousticness", "instrumentalness",
+              "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
+
+df <- spotify_binary |>
+  select(all_of(features), after_median) |>
+  na.omit()
+```
+
+```{r}
+set.seed(123)
+train_idx <- sample(seq_len(nrow(df)), size = 0.8 * nrow(df))
+train <- df[train_idx, ]
+test <- df[-train_idx, ]
+
+
+rf_model <- randomForest(after_median ~ ., data = train, ntree = 500)
+```
+
+```{r}
+# Predictions
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+accuracy <- mean(pred == test$after_median)
+print(accuracy)
+
+# Confusion Matrix
+library(caret)
+confusionMatrix(pred, test$after_median)
+```
+
+**Accuracy** (0.764): correctly classify \~76% of the songs.
+
+**Kappa** (0.525): moderate agreement beyond chance, pretty good.
+
+**Balanced** Acc. (0.762): handles class imbalance, very healthy.
+
+**Sensitivity** (0.724): correctly detect 72.4% of songs after 2007.
+
+**Specificity** (0.800): correctly detect 80% of songs before 2007.
