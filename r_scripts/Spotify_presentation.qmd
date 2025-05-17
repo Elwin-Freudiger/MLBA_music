@@ -104,7 +104,7 @@ The dataset encompasses various music genres and showcases the evolution of musi
 dim(spotify)
 ```
 
-The dataset is composed of 10.000 entries and 35 columns capturing informations about the song popularity, the artist, the release date or the particularities of the music.
+The dataset comprises 10,000 entries and 35 variables, encompassing information related to song popularity, artist identity, release date, and various musical attributes.
 
 | Variable | Description | Category | Example |
 |------------------|-------------------|------------------|------------------|
