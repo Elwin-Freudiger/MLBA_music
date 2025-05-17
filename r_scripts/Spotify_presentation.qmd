@@ -70,15 +70,15 @@ library(readr)
 spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
-## Introduction
+# Introduction
 
-### Project Goals
+## Project Goals
 
 The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024. Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
 
 From a machine learning perspective, the project focuses on both supervised and unsupervised learning tasks. This includes building predictive models to estimate a song’s release period based on its features, and using clustering algorithms to uncover latent patterns in the data. The goal is not only to analyze historical music trends but also to assess the feasibility and accuracy of predictive modeling in the context of music analytics.
 
-### Research Questions
+## Research Questions
 
 -   **Question 1**
 
@@ -92,11 +92,13 @@ From a machine learning perspective, the project focuses on both supervised and 
 
     Can unsupervised learning techniques (e.g., clustering, PCA) uncover meaningful groupings or latent structures in the dataset that align with musical genres, popularity, or eras?
 
-### Adjustments or Refinements
+## Adjustments or Refinements
 
-## Data
+????
 
-### Sources
+# Data
+
+## Sources
 
 The dataset employed in this study, titled *“Top 10,000 Spotify Songs – ARIA and Billboard Charts”*, was obtained from Kaggle, a widely used platform for sharing datasets and data science resources. It comprises a curated collection of 10,000 tracks that have achieved significant popularity, based on historical rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts. This dual-source approach ensures a broad and balanced representation of commercially successful music across English-speaking markets.
 
@@ -104,7 +106,7 @@ The dataset spans a temporal range from the 1950s to 2024, capturing the dynamic
 
 In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences. As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
 
-### Description
+## Description
 
 ```{r}
 dim(spotify)
@@ -163,9 +165,9 @@ knitr::kable(head(spotify),
 
 ```
 
-### Wrangling / Cleaning
+## Wrangling / Cleaning
 
-Rename all variables and than delete the unnecessary one.
+In preparation for analysis, the original dataset was cleaned and standardized by renaming variables to follow consistent, machine-readable naming conventions. Redundant or non-essential columns—such as URIs, preview links, and metadata unrelated to audio features—were subsequently removed. The resulting dataset *spotify_vr* retains only the relevant musical, temporal, and popularity-related attributes needed for the subsequent exploratory and predictive modeling tasks.
 
 ```{r}
 spotify <- spotify |>
@@ -215,9 +217,9 @@ spotify_vr <- spotify |>
 ncol(spotify_vr)
 ```
 
-We have now a data set with 23 columns.
+The resulting dataset consists of 23 columns, containing only the variables relevant for the subsequent analysis after the removal of redundant and non-informative features.
 
-We only keep the ID from the URL:
+We only keep the ID from the Spotify track URL by extracting the final component of the *track_uri* string.
 
 ```{r}
 library(dplyr)
@@ -239,7 +241,9 @@ knitr::kable(head(spotify_vr),
   kable_styling(font_size = 10, full_width = FALSE, position = "center")
 ```
 
-### Spotting Mistakes and Missing Data
+## Spotting Mistakes and Missing Data
+
+The procedure involves identifying and counting missing values in the dataset, detecting rows containing incomplete information, and removing those with missing or empty loudness values. Then, the release year is extracted from the release date and converted to a numeric format, producing a cleaned dataset ready for further analysis.
 
 The dataset have a total of 625 missing values, including 551 for the 'artist_genres'.
 
@@ -267,7 +271,11 @@ colSums(is.na(dataset_clean))
 
 ```
 
-### Listing Anomalies and Outliers
+The dataset contains a total of 625 missing values, of which 551 correspond to the *artist_genres* variable. Instances with missing values in variables related to musical characteristics are excluded from the analysis to ensure data quality and consistency.
+
+## Listing Anomalies and Outliers
+
+A subset of the dataset containing only numeric variables was selected, excluding *mode* and *time_signature*. The data was then transformed into long format to generate faceted boxplots, allowing for the visualization of the distribution and scale of each numeric variable individually.
 
 ```{r}
 numeric_data <- dataset_clean %>% select(where(is.numeric)) |>
@@ -283,45 +291,17 @@ ggplot(long_data, aes(x = "", y = Value)) +
   theme_minimal()
 ```
 
-**Interpretation:**
+### **Interpretation**
 
-Acousticness, energy, danceability, instrumentalness, liveness, valence, speechiness:
+The faceted boxplots illustrate the distribution of key numeric features. Variables such as acousticness, energy, danceability, instrumentalness, liveness, valence, and speechiness are bounded between 0 and 1. Most exhibit distributions concentrated near zero, particularly instrumentalness and speechiness, which show long right tails and outliers close to 1, suggesting that while the average track lacks strong instrumental or spoken elements, some are highly characterized by them.
 
--   Most values lie between 0 and 1 (bounded variables).
+Duration (in milliseconds) is slightly right-skewed, with most tracks clustered around the median and a few outliers representing exceptionally long songs. Loudness is centered around negative values, consistent with its decibel scale relative to silence, and shows a compact distribution with occasional extreme lows, likely corresponding to quiet or highly dynamic tracks.
 
--   Many of them (like instrumentalness, speechiness) show long tails or outliers close to 1.
+Popularity displays a broad distribution with outliers at both ends, indicating notable variability in audience reception. Tempo shows high variance and several extreme values, potentially due to anomalous entries or experimental compositions. Lastly, track number is typically low—reflecting songs positioned early in albums—though outliers suggest the presence of long compilations or inconsistent metadata.
 
--   These suggest that although the average track is not instrumental or speech-heavy, some are strongly so.
+## Summary statistics
 
-Duration_ms:
-
--   Slightly skewed with a few long-duration tracks (outliers).
-
--   Most tracks are tightly clustered around the median.
-
-loudness:
-
--   Negative values (typical, as loudness in dB is relative to silence).
-
--   Distribution is tight with some strong outliers at low values (very quiet or dynamic tracks).
-
-popularity:
-
--   Fairly spread out with a few outliers, indicating some tracks are much more/less popular than typical.
-
-tempo:
-
--   High variance with outliers—some songs have extremely fast tempos.
-
--   This might include errors or experimental tracks.
-
-track_number:
-
-Most tracks are near the beginning of an album (track 1–10).
-
-Outliers indicate albums with many tracks or incorrectly labeled track numbers.
-
-### Summary statistics
+Summary statistics are generated for all numeric variables in the cleaned dataset to provide an overview of central tendencies, dispersion, and the presence of potential outliers.
 
 ```{r}
 # Summary statistics for key numeric features
@@ -333,7 +313,9 @@ dataset_clean %>%
 
 ```
 
-### Correlation Matrix
+## Correlation Matrix
+
+A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
 
 ```{r}
 spotify_num <- dataset_clean %>%
@@ -344,15 +326,21 @@ corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
 
 ```
 
+The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
+
 # Exploratory Data Analysis
 
+To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
+
 ## Table description
+
+????
 
 For this data analysis, we will see different graphs....
 
 ## Summary statistics
 
-The following table shows summary statistics. of several variables
+The summary statistics table provides an overview of the central tendencies and dispersion of key variables in the dataset.
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
@@ -365,11 +353,11 @@ The track duration is expressed in milliseconds, with a mean of *3 minutes and 4
 </audio>
 ```
 
-The explicit tag, has a very imbalanced classes with 95% of songs being not is_explicit. The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33.
-
-danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
+The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit. The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range. Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
 
 ## Correlation matrix
+
+A correlation matrix was computed and visualized to examine linear relationships between all numeric features in the dataset, highlighting potential associations and redundancies among audio variables.
 
 ```{r}
 #start by selecting numeric columns
@@ -396,9 +384,9 @@ ggcorrplot(
 
 ```
 
-## Release year
+## Variables analysis
 
-Release year is the dependent variable from our dataset, we take the granularity of years.
+### Release year
 
 ```{r}
 #adding a histogram with songs by year
@@ -413,9 +401,9 @@ year_hist
 #year_hist %>% ggplotly()
 ```
 
-As we can see, our dataset tends to contain more songs released in recent years. Leading to unbalanced data, solving this problem will be discussed in subsequent sections.
+Release year is the dependent variable in this analysis, and it is considered at the level of yearly granularity. The histogram shows a strong concentration of songs in more recent years, indicating a temporal imbalance that may affect the representativeness of earlier decades in the modeling phase.
 
-## track numbers
+### Track numbers
 
 ```{r}
 track_dens <- dataset_clean %>% 
@@ -428,9 +416,9 @@ track_dens
   
 ```
 
-As we can see, most songs heavily cluster towards lower numbers.
+The distribution of track numbers is highly skewed toward lower values, indicating that most songs appear early in albums, while higher values likely reflect compilations or large tracklists.
 
-What may be insteresting to try is if Benford's law can be applied here.
+It may be interesting to assess whether Benford's Law applies to the distribution of track numbers.
 
 ```{r}
 benford_distr <- data.frame(
@@ -466,9 +454,9 @@ benford
 
 ```
 
-Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs. .......
+The distribution of the first digit in track numbers clearly deviates from the expected pattern described by Benford’s Law. This discrepancy is likely due to structural constraints in how music albums are organized. Most releases—such as singles, EPs, and standard albums—contain a relatively small and fixed number of tracks, typically ranging from 1 to 15. As a result, lower digits, particularly 1, dominate the distribution, not because of a naturally logarithmic phenomenon but due to intentional sequencing and formatting practices in album production. This illustrates how domain-specific conventions can override general statistical laws in structured datasets.
 
-Lastly, we can take a look at the evolution of track numbers over time.
+Lastly, the evolution of track numbers over time can be examined to assess whether album structure or track positioning has changed across decades, potentially reflecting shifts in music consumption formats or production practices.
 
 ```{r}
 year_tracknum <- dataset_clean %>% 
@@ -481,11 +469,11 @@ year_tracknum <- dataset_clean %>%
 year_tracknum
 ```
 
-Little correlation appears from the data.
+The scatter plot shows no clear trend in the evolution of track numbers over time. While the majority of songs consistently appear in early album positions across decades, some outliers—particularly in more recent years—exceed typical album lengths, likely reflecting special editions, compilations, or digital releases with extended tracklists.
 
-## Track Duration
+### Track Duration
 
-We can now take a look at the track duration, unless mentioned specifically, it should be assumed that the units are milliseconds.
+The distribution of track duration, expressed in milliseconds, is examined to determine typical song lengths and to identify potential outliers, including exceptionally short or long tracks, which may affect subsequent analyses.
 
 ```{r}
 duration_hist <- dataset_clean %>% 
@@ -498,9 +486,9 @@ duration_hist <- dataset_clean %>%
 duration_hist
 ```
 
-As ca be observed, the distribution is skewed to the left, with a handful of high values, while the remaining values are lower.
+The histogram shows that the distribution of track durations is right-skewed, with most songs clustered around typical lengths and a limited number of extreme values representing unusually long tracks.
 
-We can also observe track duration depending on the release year
+A line plot is used to visualize the evolution of median track duration over time. This allows identification of long-term trends, such as shifts in typical song lengths across decades, and highlights notable changes in production or consumption patterns.
 
 ```{r}
 median_year <- dataset_clean %>% 
@@ -515,7 +503,7 @@ median_year <- dataset_clean %>%
 median_year
 ```
 
-As can be seen a peak is reached in 1992 with a median track duration of 259.8 seconds or 4 minutes and 20 seconds. The recent downward trend is unsurprising, in a day and age, where the number of streams are how artists are paid, and where people are free to skip songs as they see fit, shorter songs become a necessity for artists.
+The plot shows that median track duration increased steadily throughout the second half of the 20th century, reaching a peak in 1992 at approximately 260 seconds (4 minutes and 20 seconds). A gradual decline follows, particularly from the 2010s onward. This recent downward trend is likely influenced by changes in digital consumption patterns, where streaming platforms incentivize shorter songs due to skip behavior and payout structures based on play counts.
 
 ```{r}
 duration_pop <- dataset_clean %>% 
@@ -526,7 +514,11 @@ duration_pop <- dataset_clean %>%
 duration_pop
 ```
 
-## is_explicit
+The scatter plot shows no strong correlation between duration and popularity, though popular songs tend to have standard lengths, while very long tracks are generally less popular.
+
+### is_explicit
+
+The proportion of explicit versus non-explicit songs is analyzed over time to observe how the prevalence of explicit content has evolved across different release years.
 
 ```{r}
 explicit_year <- dataset_clean %>% 
@@ -552,6 +544,10 @@ explicit_year <- dataset_clean %>%
 explicit_year
 ```
 
+The analysis reveals a clear upward trend in the share of explicit songs over time, with a marked increase beginning in the early 2000s. This suggests a shift in lyrical content or labeling practices in the streaming era, where explicit content has become more common in popular music releases.
+
+A line plot is now used to visualize the annual count of explicit songs over time, offering a more detailed view of their increasing presence in recent decades.
+
 ```{r}
 line_explicit <- dataset_clean %>% 
   drop_na() %>% 
@@ -572,7 +568,9 @@ line_explicit <- dataset_clean %>%
 line_explicit
 ```
 
-As can be observed, the share of songs with an explicit mention have taken a bigger share. It should be noted that the mention of explcit songs are to be taken with a grain of salt, as the "Explicit" mentionned is provided by the label uploading the track on spotify, several songs that may have explicit content are sometimes released with a non-explicit version, a good way for artists to ensure that their song may still be played on the radio for example.
+The line plot confirms a rising trend in the number of explicit songs over time, particularly from the early 2000s onward. However, this pattern should be interpreted cautiously, as the explicit label is assigned by content uploaders and may not consistently reflect the presence of explicit material. In some cases, tracks with potentially explicit content are also released in censored versions to ensure broader distribution, such as radio play.
+
+A boxplot is used to compare the distribution of song popularity between explicit and non-explicit tracks, allowing for the assessment of whether explicit content is associated with higher or lower popularity levels.
 
 ```{r}
 explicit_boxplot <- dataset_clean %>% 
@@ -588,7 +586,7 @@ explicit_boxplot <- dataset_clean %>%
 explicit_boxplot
 ```
 
-We can try observing the difference in popularity between explicit and non-explicit songs. We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
+To further explore the relationship between explicit content and popularity, a scatter plot is used to visualize popularity scores over time, differentiated by explicit status. This approach helps assess whether the observed higher popularity of explicit songs is inherently tied to their content or instead influenced by temporal release patterns.
 
 ```{r}
 explicit_popdate <- dataset_clean %>% 
@@ -610,9 +608,11 @@ explicit_popdate <- dataset_clean %>%
 explicit_popdate
 ```
 
-## Popularity
+The scatter plot reveals that explicit songs (in red) are predominantly concentrated in more recent years and often exhibit high popularity scores. This supports the hypothesis that the observed popularity advantage of explicit tracks may be confounded by release date, as newer songs are both more likely to be explicit and to benefit from recency effects in popularity metrics.
 
-Popularity as a metric yields meaningful insights into songs. The formula used to define popularity is not public knowledge. But, we can make the assumption that it includes in one shape or form the number of streams in a certain timeframe.
+### Popularity
+
+Popularity serves as a valuable proxy for a song’s commercial success and audience reach. While the exact algorithm used to calculate Spotify’s popularity score is not publicly disclosed, it is reasonable to assume that it reflects streaming frequency over a defined recent time window.
 
 ```{r}
 # Summary statistics for key numeric features
@@ -625,7 +625,7 @@ dataset_clean %>%
 
 ```
 
-it should be noted that the dataset was updated last in October 2024. Therefore, popularity metrics may have changed. Popularity values provide a snapshot of the popularity of a song a a certain time. Nevertheless, these change will have no impact on our study.
+It is important to note that the dataset was last updated in October 2024, meaning that the popularity scores reflect a specific point in time and may have since changed. However, this temporal limitation does not affect the validity of the present analysis, as the values still offer a reliable snapshot for exploring general trends and patterns in music popularity.
 
 ```{r}
 avg_pop_date <- dataset_clean %>% 
@@ -639,11 +639,13 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-As can be seen, it appears that the average popularity is high in the beginning and the end of our study.
+The chart shows peaks in popularity for early and recent songs. Older tracks remain culturally relevant, while the recent rise reflects the streaming era’s impact on visibility and access.
 
-While the observation that recent songs are more popular is not surprising, the high popularity of songs from the 60s is. One theory could be that these songs are still considered popular and worth adding into a playlist or rankings, they remain popular to this very day. One may think of the Beatles for example, which despite being released in the 1960s still remain popular among a wide public.
+While the high popularity of recent songs is expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that many of these songs—such as those by The Beatles—have maintained lasting cultural relevance and continue to be featured in playlists and rankings, preserving their popularity across generations.
 
 ## Text mining
+
+This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks. The goal is to identify the top 30 most frequently appearing artists in the dataset.
 
 ```{r}
 # Separate multiple artists
@@ -668,6 +670,8 @@ artist_bar <- ggplot(top_artists, aes(x = reorder(artist_names, n), y = n)) +
 artist_bar
 ```
 
+This step identifies the top 10 artists with the highest average popularity scores, offering insights into which artists consistently produce well-received songs within the dataset.
+
 ```{r}
 artist_pop <- dataset_clean %>%
   filter(!is.na(artist_names)) %>%
@@ -682,6 +686,8 @@ artist_pop <- dataset_clean %>%
   kable_styling()
 artist_pop
 ```
+
+The following analysis ranks artists by their average track duration, highlighting those associated with longer musical compositions. Such patterns may reflect stylistic tendencies common in certain genres, including progressive rock, ambient, or experimental music.
 
 ```{r}
 artist_len <- dataset_clean %>%
@@ -698,6 +704,8 @@ artist_len <- dataset_clean %>%
 artist_len
 ```
 
+The following analysis focuses on the artists with the lowest average track durations, aiming to reveal trends related to brevity in musical production, which may be influenced by genre conventions or platform-driven listening behaviors.
+
 ```{r}
 artist_len_inc <- dataset_clean %>%
   filter(!is.na(artist_names)) %>%
@@ -713,7 +721,7 @@ artist_len_inc <- dataset_clean %>%
 artist_len_inc
 ```
 
-##genres
+A similar type of analysis is now performed based on musical genre, in order to examine how average song characteristics vary across different stylistic categories.
 
 ```{r}
 top_genres <- dataset_clean %>%
@@ -754,6 +762,8 @@ genre_pop <- dataset_clean %>%
   
 genre_pop
 ```
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be contued:
 
 # Clustering
 
