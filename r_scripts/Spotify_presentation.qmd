@@ -80,11 +80,17 @@ From a machine learning perspective, the project focuses on both supervised and 
 
 ### Research Questions
 
--   To what extent can we predict the release period of a song using supervised machine learning models based on its audio and metadata features?
+-   **Question 1**
 
--   What are the most influential audio characteristics that define popular music trends over time, and how have these features evolved across decades?
+    To what extent can we predict the release period of a song using supervised machine learning models based on its audio and metadata features?
 
--   Can unsupervised learning techniques (e.g., clustering, PCA) uncover meaningful groupings or latent structures in the dataset that align with musical genres, popularity, or eras?
+-   **Question 2**
+
+    What are the most influential audio characteristics that define popular music trends over time, and how have these features evolved across decades?
+
+-   **Question 3**
+
+    Can unsupervised learning techniques (e.g., clustering, PCA) uncover meaningful groupings or latent structures in the dataset that align with musical genres, popularity, or eras?
 
 ### Adjustments or Refinements
 
@@ -92,11 +98,11 @@ From a machine learning perspective, the project focuses on both supervised and 
 
 ### Sources
 
-Kaggle
+The dataset employed in this study, titled *“Top 10,000 Spotify Songs – ARIA and Billboard Charts”*, was obtained from Kaggle, a widely used platform for sharing datasets and data science resources. It comprises a curated collection of 10,000 tracks that have achieved significant popularity, based on historical rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts. This dual-source approach ensures a broad and balanced representation of commercially successful music across English-speaking markets.
 
-The "Top 10000 Spotify Songs - ARIA and Billboard Charts" is a comprehensive collection of 10,000 of the most popular songs that have dominated the music scene from the 1950 to the present day. This dataset was curated based on rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts, ensuring a diverse representation of songs that have achieved immense commercial success and cultural significance.
+The dataset spans a temporal range from the 1950s to 2024, capturing the dynamic evolution of popular music over more than seven decades. It includes metadata and audio-based features extracted via the Spotify API, such as tempo, energy, danceability, valence, and instrumentalness, which allow for detailed computational analysis.
 
-The dataset encompasses various music genres and showcases the evolution of musical trends over the years, providing valuable insights into the ever-changing landscape of popular music. It includes tracks from iconic artists and bands, representing a mix of timeless classics and contemporary hits that have left a lasting impact on music lovers worldwide.
+In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences. As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
 
 ### Description
 
@@ -107,7 +113,7 @@ dim(spotify)
 The dataset comprises 10,000 entries and 35 variables, encompassing information related to song popularity, artist identity, release date, and various musical attributes.
 
 | Variable | Description | Category | Example |
-|----|----|----|----|
+|------------------|------------------|------------------|------------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
