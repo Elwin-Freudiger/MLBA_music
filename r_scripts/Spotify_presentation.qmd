@@ -830,10 +830,11 @@ pca_result <- prcomp(pca_data, scale. = TRUE)
 
 # 3. Extract PCA scores and add release year for coloring
 pca_scores <- as.data.frame(pca_result$x[, 1:2])
-release_years <- 
-
-pca_scores <- pca_scores %>% 
-  mutate(release_year = dataset_clean$release_year)
+release_years <- dataset_clean %>%
+  filter(release_year > 0) %>%
+  drop_na() %>%
+  pull(release_year)
+pca_scores$release_year <- release_years
 
 # 4. Extract loading for arrows
 loadings <- as.data.frame(pca_result$rotation[, 1:2])
