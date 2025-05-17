@@ -19,12 +19,23 @@ library(plotly)
 library(ggcorrplot)
 library(factoextra)
 library(FactoMineR)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(lubridate)
+library(caret)
+library(rsample)
 ```
 
 ```{r}
 #| echo: false
+library(readr)
+spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
 
-spotify <- read_csv("top_10000_1950-now.csv")
+#spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
 ## Introduction
@@ -54,7 +65,7 @@ dim(spotify)
 The dataset is composed of 10.000 entries and 35 columns capturing informations about the song popularity, the artist, the release date or the particularities of the music.
 
 | Variable | Description | Category | Example |
-|------------------|--------------------|------------------|------------------|
+|------------------|-------------------|------------------|------------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
@@ -297,8 +308,8 @@ The following table shows summary statistics. of several variables
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
-The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* 
-The audio preview below:
+The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* The audio preview below:
+
 ```{=html}
 <audio controls>
   <source src="https://p.scdn.co/mp3-preview/2da01a5ad77fddb1bc2b0ed9e138a74eabe43333?cid=9950ac751e34487dbbe027c4fd7f8e99" type="audio/mpeg">
@@ -306,11 +317,9 @@ The audio preview below:
 </audio>
 ```
 
-The explicit tag, has a very imbalanced classes with 95% of songs being not is_explicit. 
-The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33. 
+The explicit tag, has a very imbalanced classes with 95% of songs being not is_explicit. The popularity of songs are not normally distributed as one may expect. with a mean popularity of 33.
 
 danceability, Energy, Key, Loudness, Mode, Speechiness, Acousticness, Instrumentalness, Liveness, Valence, Tempo, timeSignature are all spotify variables.
-
 
 ## Correlation matrix
 
@@ -339,9 +348,6 @@ ggcorrplot(
 
 ```
 
-
-
-
 ## Release year
 
 Release year is the dependent variable from our dataset, we take the granularity of years.
@@ -360,9 +366,6 @@ year_hist
 ```
 
 As we can see, our dataset tends to contain more songs released in recent years. Leading to unbalanced data, solving this problem will be discussed in subsequent sections.
-
-
-
 
 ## track numbers
 
@@ -415,9 +418,7 @@ benford
 
 ```
 
-Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs.
-.......
-
+Unfortunately, it appears that the distribution of track numbers do not follow this distribution, likely due to the fact that track numbers are constrained. Indeed, these songs can be taken from singles which have only 1 song, EPs, which typically have 3 to 6 songs or part of an album which has more songs, but often a maximum of 15 songs. .......
 
 Lastly, we can take a look at the evolution of track numbers over time.
 
@@ -431,9 +432,8 @@ year_tracknum <- dataset_clean %>%
   labs(title="Track number depending on the release year", y="Track Number", x="Release Year")
 year_tracknum
 ```
+
 Little correlation appears from the data.
-
-
 
 ## Track Duration
 
@@ -540,8 +540,7 @@ explicit_boxplot <- dataset_clean %>%
 explicit_boxplot
 ```
 
-We can try observing the difference in popularity between explicit and non-explicit songs.
-We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
+We can try observing the difference in popularity between explicit and non-explicit songs. We observe that Explicit songs are more popular. This correlation may also be due to the release Date, indeed, recent songs aer more likely to be Explcit and more likely to be popular. This can be easily proven using a scatter plot.
 
 ```{r}
 explicit_popdate <- dataset_clean %>% 
@@ -565,7 +564,7 @@ explicit_popdate
 
 ## Popularity
 
-Popularity as a metric yields meaningful insights into songs. The formula used to define popularity is not public knowledge. But, we can make the assumption that it includes in one shape or form the number of streams in a certain timeframe. 
+Popularity as a metric yields meaningful insights into songs. The formula used to define popularity is not public knowledge. But, we can make the assumption that it includes in one shape or form the number of streams in a certain timeframe.
 
 ```{r}
 # Summary statistics for key numeric features
@@ -592,11 +591,12 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-As can be seen, it appears that the average popularity is high in the beginning and the end of our study. 
+As can be seen, it appears that the average popularity is high in the beginning and the end of our study.
 
 While the observation that recent songs are more popular is not surprising, the high popularity of songs from the 60s is. One theory could be that these songs are still considered popular and worth adding into a playlist or rankings, they remain popular to this very day. One may think of the Beatles for example, which despite being released in the 1960s still remain popular among a wide public.
 
 ## Text mining
+
 ```{r}
 # Separate multiple artists
 top_artists <- dataset_clean %>%
@@ -635,7 +635,6 @@ artist_pop <- dataset_clean %>%
 artist_pop
 ```
 
-
 ```{r}
 artist_len <- dataset_clean %>%
   filter(!is.na(artist_names)) %>%
@@ -666,7 +665,6 @@ artist_len_inc <- dataset_clean %>%
 artist_len_inc
 ```
 
-
 ##genres
 
 ```{r}
@@ -692,9 +690,6 @@ genre_bar <- ggplot(top_genres, aes(x = reorder(artist_genres, n), y = n)) +
 genre_bar
 ```
 
-
-
-
 ```{r}
 genre_pop <- dataset_clean %>%
   mutate(artist_genres = replace_na(artist_genres, "No genre")) %>% 
@@ -712,7 +707,7 @@ genre_pop <- dataset_clean %>%
 genre_pop
 ```
 
-#Clustering
+# Clustering
 
 ```{r}
 clustering_data <- dataset_clean %>% 
@@ -724,7 +719,7 @@ clustering_data <- dataset_clean %>%
 
 ##K-means clustering
 
-We'll start by fitting a k-means clustering. First, we need to determine the optimal number of clusters to use. 
+We'll start by fitting a k-means clustering. First, we need to determine the optimal number of clusters to use.
 
 ```{r}
 fviz_nbclust(clustering_data,
@@ -734,6 +729,7 @@ fviz_nbclust(clustering_data,
              verbose = FALSE)
 
 ```
+
 As can be seen, the elbow seems to converge at around 5 clusters. We will therefore, take this as our number of clusters.
 
 ```{r}
@@ -741,6 +737,7 @@ song_km <- kmeans(clustering_data, centers=30)
 ```
 
 To inspect these clusters we will start by having boxplots
+
 ```{r}
 song_comp <- data.frame(clustering_data, 
                         Clust=factor(song_km$cluster),
@@ -763,8 +760,6 @@ song_melt <- melt(as.matrix(song_distances))
 head(song_melt)
 ```
 
-
-
 ```{r}
 song_hc <- hclust(song_distances, method="complete")
 ```
@@ -775,10 +770,11 @@ rect.hclust(song_hc, k=13)
 song_clust_hc <- cutree(song_hc, k=13)
 song_clust_hc
 ```
-Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way. 
 
+Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way.
 
 #PCA
+
 ```{r}
 # 1. Prepare numeric data and keep release_year for color
 pca_data <- dataset_clean %>%
@@ -855,3 +851,167 @@ p3 <- fviz_pca_biplot(songs_pca, axes = 5:6)
 grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ```
 
+## Random Forest Balanced
+
+# Supervised Learning
+
+## Regression
+
+## Random Forest with undersampling
+
+```{r}
+spotify_year <- dataset_clean |>
+  mutate(
+    year = as.numeric(substr(release_date, 1, 4)),
+    decade = floor(year / 10) * 10
+  )
+
+spotify_dec  <- spotify_year |>
+  count(decade, sort = TRUE)
+```
+
+```{r}
+spotify_cleaned <- spotify_dec %>%
+  filter(decade != 0)
+
+spotify_grouped <- spotify_cleaned %>%
+  mutate(
+    decade_group = case_when(
+      decade %in% c(1950, 1960) ~ "1950–1960",
+      TRUE ~ as.character(decade)
+    )
+  )
+
+spotify_grouped %>%
+  count(decade_group, sort = TRUE)
+```
+
+```{r}
+# Trouver la taille du plus petit groupe
+min_n <- spotify_grouped |>
+  count(decade_group) |>
+  summarise(min_n = min(n)) |>
+  pull(min_n)
+
+# Échantillonnage équilibré
+spotify_balanced <- spotify_grouped |>
+  group_by(decade_group) |>
+  slice_sample(n = min_n) |>
+  ungroup()
+
+spotify_balanced %>%
+  count(decade_group, sort = TRUE)
+```
+
+```{r}
+features <- c("danceability", "energy", "acousticness", "instrumentalness",
+              "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
+
+df <- spotify_balanced |>
+  select(all_of(features), decade_group) |>
+  rename(decade = decade_group) |>
+  mutate(decade = as.factor(decade)) |>
+  na.omit()
+
+split <- initial_split(df, prop = 0.8, strata = decade)
+train <- training(split)
+test <- testing(split)
+
+# Fit model
+rf_model <- randomForest(decade ~ ., data = train)
+
+# Predict
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+mean(pred == test$decade)
+```
+
+```{r}
+# Predictions
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+accuracy <- mean(pred == test$decade)
+print(accuracy)
+
+# Confusion Matrix
+confusionMatrix(pred, test$decade)
+```
+
+**Accuracy** (0.410): correctly predict the decade 41% of the time
+
+**Kappa** (0.312): Fair agreement beyond chance, barely acceptable
+
+**P-value** (\< 2e-16): Statistically better than random guessing
+
+**No Info Rate** (14.3%): Baseline accuracy if you predicted the majority
+
+## Random Forest on median year
+
+```{r}
+spotify_binary <- spotify_year |>
+  mutate(
+    after_median = if_else(year > median(year, na.rm = TRUE), "after", "before"),
+    after_median = as.factor(after_median)
+  )
+```
+
+```{r}
+spotify_clean <- dataset_clean |>
+  mutate(year = as.numeric(substr(release_date, 1, 4)))
+
+# Calculate and display the median
+median_year <- median(spotify_dec$year, na.rm = TRUE)
+print(median_year)
+
+spotify_binary <- spotify_clean |>
+  mutate(
+    after_median = if_else(year > median(year, na.rm = TRUE), "after", "before"),
+    after_median = as.factor(after_median)
+  )
+```
+
+The median song was release in 2007. We are going to perform a random forest on wether the song was release before or after this year.
+
+```{r}
+features <- c("danceability", "energy", "acousticness", "instrumentalness",
+              "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
+
+df <- spotify_binary |>
+  select(all_of(features), after_median) |>
+  na.omit()
+```
+
+```{r}
+set.seed(123)
+train_idx <- sample(seq_len(nrow(df)), size = 0.8 * nrow(df))
+train <- df[train_idx, ]
+test <- df[-train_idx, ]
+
+
+rf_model <- randomForest(after_median ~ ., data = train, ntree = 500)
+```
+
+```{r}
+# Predictions
+pred <- predict(rf_model, newdata = test)
+
+# Accuracy
+accuracy <- mean(pred == test$after_median)
+print(accuracy)
+
+# Confusion Matrix
+library(caret)
+confusionMatrix(pred, test$after_median)
+```
+
+**Accuracy** (0.764): correctly classify \~76% of the songs.
+
+**Kappa** (0.525): moderate agreement beyond chance, pretty good.
+
+**Balanced** Acc. (0.762): handles class imbalance, very healthy.
+
+**Sensitivity** (0.724): correctly detect 72.4% of songs after 2007.
+
+**Specificity** (0.800): correctly detect 80% of songs before 2007.
