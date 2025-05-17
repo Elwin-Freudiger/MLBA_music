@@ -41,7 +41,17 @@ spotify <- read_csv("top_10000_1950-now.csv")
 
 ### Project Goals
 
+The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024. Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
+
+From a machine learning perspective, the project focuses on both supervised and unsupervised learning tasks. This includes building predictive models to estimate a song’s release period based on its features, and using clustering algorithms to uncover latent patterns in the data. The goal is not only to analyze historical music trends but also to assess the feasibility and accuracy of predictive modeling in the context of music analytics.
+
 ### Research Questions
+
+-   To what extent can we predict the release period of a song using supervised machine learning models based on its audio and metadata features?
+
+-   What are the most influential audio characteristics that define popular music trends over time, and how have these features evolved across decades?
+
+-   Can unsupervised learning techniques (e.g., clustering, PCA) uncover meaningful groupings or latent structures in the dataset that align with musical genres, popularity, or eras?
 
 ### Adjustments or Refinements
 
