@@ -1,7 +1,40 @@
 ---
-title: "ML Spotify"
-format: html
+title: "Hit Songs Through the Decades"
+subtitle: "A Machine Learning Approach to Predicting Release Periods and Analyzing Trends in Popular Music"
+
+author:
+
+ - Andrea Lovato
+ - Elwin Freudiger
+ - Maya Wahart
+
+institute: University of Lausanne
+date: "May 17, 2025"
+title-block-banner: "#0095C8" # chosen for the university of lausanne
+toc: true
+toc-location: right
+format: 
+  html:
+    number-sections: true
+    html-math-method: katex
+    self-contained: true
+    code-overflow: wrap
+    code-fold: true
+    code-tools: true
+    theme: 
+      light: "flatly"
+      dark: "darkly"
+    include-in-header: 
+      text: |
+        <style type="text/css">
+          .quarto-title-banner a {
+            color: #000000;
+          }
+        </style>
+
 editor: visual
+
+abstract: |
 ---
 
 ```{r}
