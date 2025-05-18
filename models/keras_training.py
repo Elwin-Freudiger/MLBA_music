@@ -5,6 +5,8 @@ import os
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import r2_score
+
 import tensorflow as tf
 from tensorflow.keras import layers, Model, utils
 from tensorflow.keras.utils import plot_model
@@ -43,8 +45,7 @@ X_img = np.stack([load_image(fp) for fp in merged_df['filepath']])
 
 # Train/test split
 X_img_train, X_img_test, X_tab_train, X_tab_test, y_train, y_test = train_test_split(
-    X_img, X_tab_scaled, y_norm, test_size=0.2, random_state=42
-)
+    X_img, X_tab_scaled, y_norm, test_size=0.2, random_state=42)
 
 # CNN branch
 img_input = layers.Input(shape=(64, 64, 3), name="img_input")
@@ -68,6 +69,10 @@ z = layers.Dense(1, activation="sigmoid")(z)
 
 # Model
 model = Model(inputs=[img_input, tab_input], outputs=z)
+
+model.summary()
+model.save("figures/model.keras")
+
 model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
 
 # Train
@@ -93,3 +98,6 @@ y_test_year = y_test * (y_max - y_min) + y_min
 
 for pred, true in zip(y_pred_year[:5].flatten(), y_test_year[:5]):
     print(f"Predicted: {pred:.1f}, True: {true:.1f}")
+
+r2 = r2_score(y_test_year, y_pred_year)
+print(f"R² score: {r2:.4f}")
