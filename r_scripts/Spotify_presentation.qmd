@@ -82,6 +82,36 @@ From a machine learning perspective, the project focuses on both supervised and 
 
 ????
 
+# Literature review 
+
+## Music Analytics and Machine Learning
+
+The intersection of music and data science has increasingly attracted scholarly attention, particularly due to the rise of streaming platforms that provide large-scale, structured musical data. Several studies have explored the potential of audio and metadata features—such as those provided by Spotify—for understanding musical trends, classifying genres, and predicting popularity (Schedl et al., 2015; Ferreira & Whitehead, 2019). These features typically include danceability, energy, tempo, and valence, which encode perceptual and structural dimensions of sound and have been shown to correlate with human musical preferences (Friberg et al., 2014).
+
+Machine learning techniques have been applied extensively to music data for tasks such as mood classification (Sordo et al., 2013), genre detection (Kim et al., 2010), and hit song prediction (Herremans et al., 2014). Supervised models, particularly random forests and support vector machines, have demonstrated robust performance in tasks involving feature-based classification and regression. More recent work has applied deep learning architectures to raw audio input, though these approaches often demand substantial computational resources and training data (Choi et al., 2017).
+
+Unsupervised learning, including clustering and dimensionality reduction techniques such as PCA, has also been used to explore latent patterns in musical corpora. For example, Jan Van Balen et al. (2016) used clustering to discover prototypical musical structures, while Serrà et al. (2012) applied PCA to uncover dominant stylistic trends over time.
+
+## Temporal Trends and Musical Evolution
+
+Temporal analyses have shown that the characteristics of popular music evolve in response to technological, cultural, and economic forces (Mauch et al., 2015). For instance, changes in average song duration have been linked to shifts in radio programming, physical formats (e.g., vinyl, CDs), and digital streaming incentives. The increasing prevalence of explicit lyrics has been attributed to looser content restrictions and changing cultural norms (Pachet, 2008).
+
+Empirical work by Interiano et al. (2018) used Spotify audio features to track the emotional content of popular music, observing a long-term trend toward increased sadness and decreased acousticness in top-charting songs. Similarly, Singhi and Brown (2014) demonstrated that temporal audio descriptors could be used to model the release decade of songs with reasonable accuracy.
+
+## Challenges in Modeling Popularity and Period
+
+While popularity is a central variable in music analytics, its measurement remains opaque. Spotify’s proprietary popularity score is influenced by recent streaming activity, skips, and playlist placements, making it a dynamic and platform-specific metric (Spotify, 2023). Consequently, its use in predictive models must be interpreted as a temporal snapshot rather than a static attribute.
+
+Predicting a song’s release year or period based on its acoustic profile poses challenges due to the high variability of musical styles within the same time frame and the enduring popularity of certain older songs. Nevertheless, several studies have demonstrated that audio features carry enough temporal signal to support classification tasks by decade or era, particularly when modeling broader stylistic shifts (Müller et al., 2010).
+
+## Contribution of the Present Study
+
+Building on this body of literature, the present study contributes a comprehensive analysis of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning more than seven decades. While prior work has focused either on genre classification or mood prediction, this study uniquely combines exploratory data analysis, unsupervised learning (e.g., PCA, clustering), and supervised modeling to assess both the temporal evolution of music and the predictive power of audio features.
+
+Moreover, by investigating the relationships between explicitness, duration, and popularity in a temporal context, this work highlights how platform incentives and listener behaviors have shaped recent musical trends. It also addresses gaps in the literature regarding the feasibility of using readily available Spotify features for temporal classification, and evaluates the limitations of clustering methods in capturing stylistic boundaries.
+
+Finally, this study serves as a practical application of machine learning techniques in the music domain, offering insights for musicologists, data scientists, and digital media analysts interested in the computational modeling of cultural data.
+
 # Data
 
 ## Sources
@@ -751,7 +781,9 @@ genre_pop
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be contued:
 
-# Clustering
+# Machine Learning Methods
+
+## Clustering
 
 ```{r}
 clustering_data <- dataset_clean %>% 
@@ -796,7 +828,7 @@ ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
 
 As can be seen, no pattern seems to emerge from the k-means clustering. We may still attempt to have hierarchical clustering.
 
-## Hierearchical clustering
+### Hierearchical clustering
 
 ```{r}
 song_distances <- dist(clustering_data, method = "manhattan")
@@ -896,13 +928,13 @@ p3 <- fviz_pca_biplot(songs_pca, axes = 5:6)
 grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ```
 
-## Random Forest Balanced
+### Random Forest Balanced
 
-# Supervised Learning
+## Supervised Learning
 
-## Regression
+### Regression
 
-## Random Forest with undersampling
+### Random Forest with undersampling
 
 ```{r}
 spotify_year <- dataset_clean |>
@@ -992,7 +1024,7 @@ confusionMatrix(pred, test$decade)
 
 **No Info Rate** (14.3%): Baseline accuracy if you predicted the majority
 
-## Random Forest on median year
+### Random Forest on median year
 
 ```{r}
 spotify_binary <- spotify_year |>
@@ -1060,3 +1092,37 @@ confusionMatrix(pred, test$after_median)
 **Sensitivity** (0.724): correctly detect 72.4% of songs after 2007.
 
 **Specificity** (0.800): correctly detect 80% of songs before 2007.
+
+# Conclusive discussion
+
+# Appendix
+
+# References
+
+Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023). *Songs popularity analysis using Spotify data: An exploratory study*. In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223). https://www.researchgate.net/publication/384286217
+
+Choi, K., Fazekas, G., Sandler, M., & Cho, K. (2017). *Convolutional recurrent neural networks for music classification*. 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2392–2396. https://doi.org/10.1109/ICASSP.2017.7952585
+
+Friberg, A., Erkut, C., & Bresin, R. (2011). *Perceptual ratings of musical parameters*. Proceedings of the International Conference on Music Perception and Cognition (ICMPC), 193–198.
+
+Gómez-Cañón, J. S., Cano, E., Eerola, T., Herrera, P., Hu, X., Yang, Y.-H., & Gómez, E. (2021). Music emotion recognition: Toward new, robust standards in personalized and context-sensitive applications. *EEE Signal Processing Magazine, 38*(6), 106–114.
+
+Herremans, D., Martens, D., & Sörensen, K. (2019). *Dance hit song prediction*. University of Antwerp Operations Research Group Applied Data Mining Research Group, University of Antwerp.
+
+Interiano, M., Kazemi, K., Wang, L., Yang, J., & Komarova, N. L. (2018). *Musical trends and predictability of success in contemporary songs in and out of the top charts*. Royal Society Open Science, 5(5), 171274. https://doi.org/10.1098/rsos.171274
+
+Jan Van Balen, L., Burgoyne, J. A., Bountouridis, D., Müllensiefen, D., & Honingh, A. (2015). *Corpus analysis tools for computational hook discovery*. Proceedings of the 17th ISMIR Conference, 227–233.
+
+Kim, Y. E., Schmidt, E. M., Migneco, R., Morton, B. G., Richardson, P., Scott, J., ... & Turnbull, D. (2010). *Music emotion recognition: A state of the art review*. Proceedings of the 11th International Society for Music Information Retrieval Conference (ISMIR), 255–266.
+
+Mauch, M., MacCallum, R. M., Levy, M., & Leroi, A. M. (2015). *The evolution of popular music: USA 1960–2010*. Royal Society Open Science, 2(5), 150081. https://doi.org/10.1098/rsos.150081
+
+Müller, M., Ewert, S., & Grosche, P. (2010). *Musical structure analysis using audio features*. In Müller, M. (Ed.), Fundamentals of Music Processing (pp. 135–154). Springer. https://doi.org/10.1007/978-3-319-21945-5_6
+
+Pachet, F. (2008). *Hit song science is not yet a science*. Proceedings of the 9th International Conference on Music Information Retrieval (ISMIR), 355–360.
+
+Schedl, M., Gómez, E., & Urbano, J. (2015). *Music information retrieval: Recent developments and applications*. Foundations and Trends in Information Retrieval, 8(2-3), 127–261. https://doi.org/10.1561/1500000042
+
+Serrà, J., Corral, Á., Boguñá, M., Haro, M., & Arcos, J. L. (2012). *Measuring the evolution of contemporary Western popular music*. Scientific Reports, 2(1), 521. https://doi.org/10.1038/srep00521
+
+Spotify. (2023). *How Spotify’s popularity score works*. Spotify Developer Documentation. Retrieved from https://developer.spotify.com/
