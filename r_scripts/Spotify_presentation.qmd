@@ -122,6 +122,81 @@ The dataset spans a temporal range from the 1950s to 2024, capturing the dynamic
 
 In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences. As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
 
+## Image Data
+
+In order to enhance the predictions, album covers were selected to be added as input in the neural network model. The orginal dataset uses a link provided by spotify to retrieve each image. The code below shows the process used:
+
+```{python}
+#| eval: false
+
+import pandas as pd
+import numpy as np
+
+import requests
+import os
+from tqdm import tqdm
+from io import BytesIO
+from PIL import Image
+import matplotlib.pyplot as plt
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+#function that processes one image
+def process_image(row, size = (64,64), out_dir='data/clean/images'):
+    id = row['id']
+    link = row['Album Image URL'] 
+    try:
+        response = requests.get(link, timeout=10)
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+        #resizing of the image
+        final_image = image.resize(size)
+        out_path = os.path.join(out_dir, f"{id}.png")
+        final_image.save(out_path)
+        return {'id': id, 'filepath': out_path}
+    except Exception as e:
+        print(f"Failed for {id}: {e}")
+        return None
+
+
+
+def main(dir='data/clean/images'):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    #input dataset with links
+    df = pd.read_csv('data/raw/top_10000_1950-now.csv')
+    df['id'] = df['Track URI'].str.slice(start=14)
+
+    #process them in parallel by using threading to speed up the process
+    results = []
+
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        futures = {executor.submit(process_image, row, out_dir=dir): row['id'] for _, row in df.iterrows()}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+               results.append(result)
+
+    # save all image path
+    image_df = pd.DataFrame(results)
+    image_df.to_csv('data/clean/image_dataset.csv', index=False)
+    print('Saved images and csv!')
+
+if __name__ == "__main__":
+    main()
+    
+```
+
+As can be seen, all images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store.
+All images are then saved locally, with their Spotify Song ID as a filename. 
+This process was performed in parallel using multi-treading. This enables a much faster processing time.
+
+Examples images can be seen here:
+[Taylor Swift's Red Ablum cover](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png)
+[Sabrina Carpenter's Short n' Sweet Ablum cover](../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png)
+[AC/DC's Dirty Deeds Done Dirt Cheap Ablum cover](../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png)
+[ABBA's Arrival Ablum cover](../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png)
+
+
+
 ## Description
 
 ```{r}
@@ -307,7 +382,7 @@ ggplot(long_data, aes(x = "", y = Value)) +
   theme_minimal()
 ```
 
-### **Interpretation**
+### Interpretation
 
 The faceted boxplots illustrate the distribution of key numeric features. Variables such as acousticness, energy, danceability, instrumentalness, liveness, valence, and speechiness are bounded between 0 and 1. Most exhibit distributions concentrated near zero, particularly instrumentalness and speechiness, which show long right tails and outliers close to 1, suggesting that while the average track lacks strong instrumental or spoken elements, some are highly characterized by them.
 
@@ -779,11 +854,13 @@ genre_pop <- dataset_clean %>%
 genre_pop
 ```
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be contued:
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be continued:
 
 # Machine Learning Methods
 
-## Clustering
+## Unsupervised Learning
+
+### Clustering
 
 ```{r}
 clustering_data <- dataset_clean %>% 
@@ -793,7 +870,7 @@ clustering_data <- dataset_clean %>%
   scale()
 ```
 
-##K-means clustering
+### K-means clustering
 
 We'll start by fitting a k-means clustering. First, we need to determine the optimal number of clusters to use.
 
@@ -828,7 +905,7 @@ ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
 
 As can be seen, no pattern seems to emerge from the k-means clustering. We may still attempt to have hierarchical clustering.
 
-### Hierearchical clustering
+### Hierarchical clustering
 
 ```{r}
 song_distances <- dist(clustering_data, method = "manhattan")
@@ -849,7 +926,7 @@ song_clust_hc
 
 Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way.
 
-#PCA
+### PCA
 
 ```{r}
 # 1. Prepare numeric data and keep release_year for color
@@ -928,9 +1005,10 @@ p3 <- fviz_pca_biplot(songs_pca, axes = 5:6)
 grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ```
 
-### Random Forest Balanced
 
 ## Supervised Learning
+
+### Random Forest Balanced
 
 ### Regression
 
@@ -1092,6 +1170,134 @@ confusionMatrix(pred, test$after_median)
 **Sensitivity** (0.724): correctly detect 72.4% of songs after 2007.
 
 **Specificity** (0.800): correctly detect 80% of songs before 2007.
+
+
+### Neural Networks
+
+While Random Forest models showed satisfying results when it came to classification of track decades, attempts involving regression tasks to predict the year saw issues. It was therefore decided to attempt to fit a neural network to predict the release year using tabular data as well as album covers. 
+
+#### Model Building
+
+The model was built and fitted using python and the **Keras** library, allowing to easily build neural networks.
+
+The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
+
+The model summary can be seen below:
+![Neural network Summary](../figures/Concat_model_spot.png)
+The code used to build the model can be seen below.
+
+```{python}
+#| eval: false
+
+# load libraries
+import numpy as np
+import pandas as pd
+import os
+from PIL import Image
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow.keras import layers, Model, utils
+from tensorflow.keras.utils import plot_model
+import matplotlib.pyplot as plt
+
+# Load CSVs
+df_images = pd.read_csv('data/clean/image_dataset.csv')
+tabular_df = pd.read_csv('data/clean/tabular_data.csv')
+df_images['filepath'] = df_images["filepath"].str.replace('/', "\\", regex=False)
+
+# Merge on ID
+merged_df = df_images.merge(tabular_df, on='id', how='inner')
+
+# Keep numeric features, is_explicit is boolean but represented as numeric
+numeric_cols = [
+    "track_number", "duration_ms", "popularity", "danceability", "energy", "loudness", 
+    "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", 
+    "time_signature", "is_explicit"
+]
+X_tab = merged_df[numeric_cols].values
+y = merged_df["release_year"].values
+
+#normalization of the release year
+y_min, y_max = np.min(y), np.max(y)
+y_norm = (y - y_min) / (y_max - y_min)
+
+# Scale tabular input
+scaler = StandardScaler()
+X_tab_scaled = scaler.fit_transform(X_tab)
+
+# Load and resize images
+def load_image(filepath):
+    img = Image.open(filepath).convert("RGB").resize((64, 64))
+    return np.array(img) / 255.0
+
+X_img = np.stack([load_image(fp) for fp in merged_df['filepath']])
+
+# Train/test split
+X_img_train, X_img_test, X_tab_train, X_tab_test, y_train, y_test = train_test_split(
+    X_img, X_tab_scaled, y_norm, test_size=0.2, random_state=42
+)
+
+# CNN branch
+img_input = layers.Input(shape=(64, 64, 3), name="img_input")
+x = layers.Conv2D(32, (3, 3), activation="relu")(img_input)
+x = layers.MaxPooling2D()(x)
+x = layers.Conv2D(64, (3, 3), activation="relu")(x)
+x = layers.MaxPooling2D()(x)
+x = layers.Flatten()(x)
+x = layers.Dense(64, activation="relu")(x)
+x = layers.Dropout(0.5)(x)
+
+# Tabular branch
+tab_input = layers.Input(shape=(X_tab.shape[1],), name="tab_input")
+t = layers.Dense(64, activation="relu")(tab_input)
+t = layers.Dense(32, activation="relu")(t)
+
+# Merge
+combined = layers.concatenate([x, t])
+z = layers.Dense(64, activation="relu")(combined)
+z = layers.Dense(1, activation="sigmoid")(z) 
+
+# Model
+model = Model(inputs=[img_input, tab_input], outputs=z)
+
+model.summary()
+model.save("figures/model.keras")
+
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
+
+# Train
+history = model.fit(
+    {"img_input": X_img_train, "tab_input": X_tab_train},
+    y_train,
+    validation_split=0.2,
+    epochs=20,
+    batch_size=32
+)
+
+# Evaluate on normalized scale
+loss, mae = model.evaluate(
+    {"img_input": X_img_test, "tab_input": X_tab_test},
+    y_test
+)
+print(f"[Normalized] Test Loss: {loss:.4f}, MAE: {mae:.4f}")
+```
+
+As can be seen, the release year was normalized, knowing that the release years were located between 1955 and 2024, a normalization will help put every release year between 0 and 1. Therefore enabling predictions bounded between these maximum and minimums. This is also done with the use of a sigmoid activation function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
+
+### Results
+
+The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
+
+**Training MSE: 0.0274 **
+**Training MAE: 0.1133**
+
+**Test MSE: 0.0270**
+**Test MAE; 0.1139**
+
+**Test R² score: 0.4539**
+
+These results show no sign of overfitting, regarding the metrics themselves, one should keep in mind that these metrics are for normalized years. Therefore, a mean absolute error of 0.1139 over the 69(2024-1955) years of study means that the model is on average off by 7.8 years. The R-squared score shows that while the model may capture some of the variance, a big part is due to other factors.
 
 # Conclusive discussion
 
