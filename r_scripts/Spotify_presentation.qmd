@@ -78,20 +78,6 @@ The primary objective of this project is to apply machine learning techniques to
 
 From a machine learning perspective, the project focuses on both supervised and unsupervised learning tasks. This includes building predictive models to estimate a song’s release period based on its features, and using clustering algorithms to uncover latent patterns in the data. The goal is not only to analyze historical music trends but also to assess the feasibility and accuracy of predictive modeling in the context of music analytics.
 
-## Research Questions
-
--   **Question 1**
-
-    To what extent can we predict the release period of a song using supervised machine learning models based on its audio and metadata features?
-
--   **Question 2**
-
-    What are the most influential audio characteristics that define popular music trends over time, and how have these features evolved across decades?
-
--   **Question 3**
-
-    Can unsupervised learning techniques (e.g., clustering, PCA) uncover meaningful groupings or latent structures in the dataset that align with musical genres, popularity, or eras?
-
 ## Adjustments or Refinements
 
 ????
