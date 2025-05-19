@@ -49,10 +49,9 @@ library(lubridate)
 library(caret)
 ```
 
-
 ```{r,, echo=FALSE, warning=FALSE}
-#spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
-spotify <- read_csv("top_10000_1950-now.csv")
+spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+#spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
 # 1. Introduction
@@ -108,6 +107,7 @@ In order to enhance the predictions, album covers were selected to be added as i
 All images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store. All images are then saved locally, with their Spotify Song ID as a filename. This process was performed in parallel using multi-treading. This enables a much faster processing time.
 
 Image examples can be seen here:
+
 ```{r album-covers, fig.cap="From left to right: RED by Taylor Swift, Short n' Sweet by Sabrina Carpenter, Dirty Deeds Done Dirt Cheap by AC/DC, Arrival by ABBA.", out.width='24%', fig.align='center'}
 knitr::include_graphics(c(
   "../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png",
@@ -327,7 +327,6 @@ dataset_clean %>%
 
 ```
 
-
 The summary statistics table provides an overview of the central tendencies and dispersion of key variables in the dataset.
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
@@ -335,7 +334,6 @@ As we can see, regarding the release date, most songs have been released in more
 The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)*.
 
 The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit. The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range. Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
-
 
 ## Correlation Matrix
 
@@ -631,8 +629,7 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-The chart shows peaks in popularity for early and recent songs. 
-While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
+The chart shows peaks in popularity for early and recent songs. While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
 
 ## Text mining
 
@@ -855,12 +852,10 @@ fviz_pca_var(songs_pca)
 ```{r}
 fviz_contrib(songs_pca, choice = "var", axes = 1)
 ```
+
 ```{r}
 fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
 ```
-
-
-
 
 ```{r}
 p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
@@ -910,7 +905,6 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
   ) +
   theme_minimal()
 ```
-
 
 ## Supervised Learning Methodology
 
@@ -1118,8 +1112,7 @@ The model was built and fitted using python and the **Keras** library, allowing 
 
 The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
 
-
-The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png) 
+The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png)
 
 To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years. The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
 
@@ -1131,11 +1124,9 @@ To build the model, the release year was normalized, Therefore enabling predicti
 
 ### PCA
 
-
 ## Supervised Learning
 
-### Neural Network 
-
+### Neural Network
 
 The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
 
