@@ -765,6 +765,36 @@ genre_pop
 
 # 4. Machine Learning Methods
 
+In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods. Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
+
+### **Supervised Learning Methods**
+
+Supervised learning involves building models that learn from labeled data, where the outcome variable (in our case, the song's year) is known. The goal is to find a function that best predicts this outcome from a set of features.
+
+#### **Random Forest**
+
+Random Forest (RF) is an ensemble learning method that builds a large number of decision trees during training and outputs either the mode (for classification) or the mean (for regression) of the individual tree predictions. It combines two key ideas: bagging (training trees on bootstrapped samples of the data) and random feature selection at each split, which helps reduce variance and improve model generalization. In this context, RF will be used to predict the release year of a song as a regression task, leveraging its robustness to overfitting and capacity to handle complex interactions between features.
+
+#### **Neural Networks**
+
+Artificial Neural Networks (NN) are flexible, layered models composed of nodes (neurons) that compute weighted sums of inputs and apply non-linear activation functions. They are particularly effective for capturing complex, non-linear relationships in data. In our study, we use NNs with one or more hidden layers to model the relationship between musical features and the year of release, treating this as a regression problem. The model is trained using gradient descent to minimize a loss function, typically the mean squared error (MSE).
+
+### **Unsupervised Learning Methods**
+
+Unsupervised learning does not use labeled data but instead focuses on uncovering hidden structures within the data. This can be particularly useful in exploratory phases to detect patterns and validate assumptions about the features.
+
+#### **K-means Clustering**
+
+K-means is a partitioning method that groups data into a predefined number of clusters (k) by minimizing the within-cluster sum of squares. The algorithm iteratively assigns each instance to the nearest cluster centroid and updates the centroids until convergence. In our analysis, K-means is used to examine whether natural groupings exist among songs based on their musical attributes, potentially revealing eras or genres that influence the release year.
+
+#### **Hierarchical Clustering**
+
+Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points. We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step. This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
+
+#### **Principal Component Analysis (PCA)**
+
+PCA is a dimensionality reduction technique that transforms the original features into a smaller number of uncorrelated components that retain most of the data variance. In this study, PCA is used to reduce the high-dimensional musical feature space into a more manageable form for visualization and clustering. Additionally, PCA components may be used as inputs to supervised models to mitigate multicollinearity and improve performance.
+
 # 5. Results
 
 ## Unsupervised Learning
@@ -945,10 +975,6 @@ grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 
 ## Supervised Learning
 
-### Random Forest Balanced
-
-### Regression
-
 ### Random Forest with undersampling
 
 ```{r}
@@ -1031,6 +1057,27 @@ print(accuracy)
 
 # Confusion Matrix
 confusionMatrix(pred, test$decade)
+
+cm <- confusionMatrix(predict(rf_model, newdata = test), test$decade)
+cm_df <- as.data.frame(cm$table)
+
+ggplot(cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white", size = 5) +
+  scale_fill_gradient(low = "steelblue", high = "darkred") +
+  theme_minimal() +
+  labs(title = "Confusion Matrix Heatmap")
+```
+
+```{r}
+tree_model <- rpart(decade ~ ., data = train, method = "class")
+
+# Plot it
+rpart.plot(tree_model,
+           type = 2,          # labels all nodes
+           extra = 104,       # show class probabilities + percentages
+           fallen.leaves = TRUE,
+           main = "Decision Tree")
 ```
 
 **Accuracy** (0.410): correctly predict the decade 41% of the time
@@ -1090,6 +1137,17 @@ print(accuracy)
 # Confusion Matrix
 library(caret)
 confusionMatrix(pred, test$after_median)
+```
+
+```{r}
+tree_model <- rpart(after_median ~ ., data = train, method = "class")
+
+# Plot it
+rpart.plot(tree_model,
+           type = 2,          # labels all nodes
+           extra = 104,       # show class probabilities + percentages
+           fallen.leaves = TRUE,
+           main = "Decision Tree")
 ```
 
 **Accuracy** (0.764): correctly classify \~76% of the songs.
