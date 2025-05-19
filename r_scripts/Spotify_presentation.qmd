@@ -49,13 +49,13 @@ library(lubridate)
 library(caret)
 ```
 
-```{r,, echo=FALSE, warning=FALSE}
-library(readr)
 
+```{r,, echo=FALSE, warning=FALSE}
+#spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
 spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
-# Introduction
+# 1. Introduction
 
 The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024. Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
 
@@ -91,7 +91,7 @@ Moreover, by investigating the relationships between explicitness, duration, and
 
 Finally, this study serves as a practical application of machine learning techniques in the music domain, offering insights for musicologists, data scientists, and digital media analysts interested in the computational modeling of cultural data.
 
-# Data
+# 2. Data
 
 ## Sources
 
@@ -256,30 +256,33 @@ knitr::kable(head(spotify_vr),
 
 The procedure involves identifying and counting missing values in the dataset, detecting rows containing incomplete information, and removing those with missing or empty loudness values. Then, the release year is extracted from the release date and converted to a numeric format, producing a cleaned dataset ready for further analysis.
 
-The dataset have a total of 625 missing values, including 551 for the 'artist_genres'.
-
-We are going to drop the instance with missing feature about the music.
+The dataset have a total of 625 missing values before cleaning. After cleaning we still have 547 missing values, all of them concern the *artist_genres*.
 
 ```{r}
+#| echo: false
+#| message: false
+
 # Count total missing values
 sum(is.na(spotify_vr))  # This will return the total number of NAs
-
-# Show missing values per column
-colSums(is.na(spotify_vr))
-
-#Rows with missing values
-rows_with_missing <- spotify_vr |>
-  filter(if_any(everything(), ~ is.na(.) | . == ""))
-
-# View the rows
-rows_with_missing
 
 dataset_clean <- spotify_vr |>
   filter(!is.na(loudness) & loudness != "") %>% 
   mutate(release_year = as.numeric(substr(release_date, start = 1, stop = 4)))
 
-colSums(is.na(dataset_clean))
+#Drop instance with missing release date
+dataset_clean <- dataset_clean |>
+  filter(release_date != "0000")
 
+colSums(is.na(dataset_clean)) |>
+  head(20) |>  # Limit to first 20 rows for readability
+  kable(
+    format = "html",
+    caption = "Rows with Missing or Blank Values"
+  ) |>
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE
+  )
 ```
 
 The dataset contains a total of 625 missing values, of which 551 correspond to the *artist_genres* variable. Instances with missing values in variables related to musical characteristics are excluded from the analysis to ensure data quality and consistency.
@@ -333,28 +336,18 @@ The track duration is expressed in milliseconds, with a mean of *3 minutes and 4
 
 The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit. The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range. Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
 
+
 ## Correlation Matrix
 
-A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
-
-```{r}
-spotify_num <- dataset_clean %>%
-  select_if(is.numeric) %>%
-  na.omit()
-
-corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
-
-```
-
-The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
-
-# Exploratory Data Analysis
+# 3. Exploratory Data Analysis
 
 To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
 
 ## Correlation matrix
 
-A correlation matrix was computed and visualized to examine linear relationships between all numeric features in the dataset, highlighting potential associations and redundancies among audio variables.
+A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
+
+The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
 
 ```{r}
 #start by selecting numeric columns
@@ -773,7 +766,9 @@ genre_pop
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be continued:
 
-# Machine Learning Methods
+# 4. Machine Learning Methods
+
+# 5. Results
 
 ## Unsupervised Learning
 
@@ -916,7 +911,45 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
   theme_minimal()
 ```
 
+
 ## Supervised Learning Methodology
+
+```{r}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+songs_pca
+```
+
+```{r}
+fviz_pca_var(songs_pca)
+```
+
+```{r}
+fviz_contrib(songs_pca, choice = "var", axes = 1)
+```
+
+```{r}
+fviz_pca_biplot(songs_pca)
+```
+
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+```{r}
+library(gridExtra)
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
+
+## Supervised Learning
 
 ### Random Forest Balanced
 
@@ -1085,6 +1118,7 @@ The model was built and fitted using python and the **Keras** library, allowing 
 
 The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
 
+
 The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png) 
 
 To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years. The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
@@ -1102,6 +1136,7 @@ To build the model, the release year was normalized, Therefore enabling predicti
 
 ### Neural Network 
 
+
 The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
 
 **Training MSE: 0.0274** **Training MAE: 0.1133**
@@ -1112,11 +1147,11 @@ The model was trained with 20 epochs and a batch size of 32 returned the followi
 
 These results show no sign of overfitting, regarding the metrics themselves, one should keep in mind that these metrics are for normalized years. Therefore, a mean absolute error of 0.1139 over the 69(2024-1955) years of study means that the model is on average off by 7.8 years. The R-squared score shows that while the model may capture some of the variance, a big part is due to other factors.
 
-# Conclusive discussion
+# 6. Conclusion & discussion
 
-# Appendix
+# 7. Appendix
 
-# References
+# 8. References
 
 Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023). *Songs popularity analysis using Spotify data: An exploratory study*. In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223). https://www.researchgate.net/publication/384286217
 
