@@ -178,3 +178,6 @@ data/raw
 data/clean/images
 
 r_scripts/top_10000_1950-now.csv
+
+r_scripts/Test.qmd
+r_scripts/Test.pdf

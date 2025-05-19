@@ -10,32 +10,18 @@ author:
 
 institute: University of Lausanne
 date: "May 17, 2025"
-title-block-banner: "#0095C8" # chosen for the university of lausanne
-toc: true
-toc-location: right
-format: 
-  html:
+format:
+  pdf:
+    toc: true
     number-sections: true
-    html-math-method: katex
-    self-contained: true
-    code-overflow: wrap
-    code-fold: true
-    code-tools: true
-    theme: 
-      light: "flatly"
-      dark: "darkly"
-    include-in-header: 
-      text: |
-        <style type="text/css">
-          .quarto-title-banner a {
-            color: #000000;
-          }
-        </style>
-
-editor: visual
+    colorlinks: true
 
 abstract: |
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
 
 ```{r}
 #| echo: false
@@ -51,6 +37,7 @@ library(corrplot)
 library(plotly)
 library(ggcorrplot)
 library(factoextra)
+library(gridExtra)
 library(FactoMineR)
 library(dplyr)
 library(ggplot2)
@@ -60,20 +47,15 @@ library(rpart)
 library(rpart.plot)
 library(lubridate)
 library(caret)
-library(rsample)
 ```
 
-```{r}
-#| echo: false
-#| message: false
-library(readr)
+
+```{r,, echo=FALSE, warning=FALSE}
 #spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
 spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
 # 1. Introduction
-
-## Project Goals
 
 The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024. Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
 
@@ -121,70 +103,19 @@ In addition to representing a variety of genres, artists, and time periods, the 
 
 ## Image Data
 
-In order to enhance the predictions, album covers were selected to be added as input in the neural network model. The orginal dataset uses a link provided by spotify to retrieve each image. The code below shows the process used:
+In order to enhance the predictions, album covers were selected to be added as input in the neural network model. The orginal dataset uses a link provided by spotify to retrieve each image.
 
-```{python}
-#| eval: false
+All images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store. All images are then saved locally, with their Spotify Song ID as a filename. This process was performed in parallel using multi-treading. This enables a much faster processing time.
 
-import pandas as pd
-import numpy as np
-
-import requests
-import os
-from tqdm import tqdm
-from io import BytesIO
-from PIL import Image
-import matplotlib.pyplot as plt
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-#function that processes one image
-def process_image(row, size = (64,64), out_dir='data/clean/images'):
-    id = row['id']
-    link = row['Album Image URL'] 
-    try:
-        response = requests.get(link, timeout=10)
-        image = Image.open(BytesIO(response.content)).convert("RGB")
-        #resizing of the image
-        final_image = image.resize(size)
-        out_path = os.path.join(out_dir, f"{id}.png")
-        final_image.save(out_path)
-        return {'id': id, 'filepath': out_path}
-    except Exception as e:
-        print(f"Failed for {id}: {e}")
-        return None
-
-
-
-def main(dir='data/clean/images'):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    #input dataset with links
-    df = pd.read_csv('data/raw/top_10000_1950-now.csv')
-    df['id'] = df['Track URI'].str.slice(start=14)
-
-    #process them in parallel by using threading to speed up the process
-    results = []
-
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = {executor.submit(process_image, row, out_dir=dir): row['id'] for _, row in df.iterrows()}
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-               results.append(result)
-
-    # save all image path
-    image_df = pd.DataFrame(results)
-    image_df.to_csv('data/clean/image_dataset.csv', index=False)
-    print('Saved images and csv!')
-
-if __name__ == "__main__":
-    main()
-    
+Image examples can be seen here:
+```{r album-covers, fig.cap="From left to right: RED by Taylor Swift, Short n' Sweet by Sabrina Carpenter, Dirty Deeds Done Dirt Cheap by AC/DC, Arrival by ABBA.", out.width='24%', fig.align='center'}
+knitr::include_graphics(c(
+  "../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png",
+  "../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png",
+  "../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png",
+  "../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png"
+))
 ```
-
-As can be seen, all images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store. All images are then saved locally, with their Spotify Song ID as a filename. This process was performed in parallel using multi-treading. This enables a much faster processing time.
-
-Examples images can be seen here: [Taylor Swift's Red Ablum cover](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png) [Sabrina Carpenter's Short n' Sweet Ablum cover](../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png) [AC/DC's Dirty Deeds Done Dirt Cheap Ablum cover](../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png) [ABBA's Arrival Ablum cover](../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png)
 
 ## Description
 
@@ -382,41 +313,35 @@ Duration (in milliseconds) is slightly right-skewed, with most tracks clustered 
 
 Popularity displays a broad distribution with outliers at both ends, indicating notable variability in audience reception. Tempo shows high variance and several extreme values, potentially due to anomalous entries or experimental compositions. Lastly, track number is typically low—reflecting songs positioned early in albums—though outliers suggest the presence of long compilations or inconsistent metadata.
 
-## Correlation Matrix
-
-# 3. Exploratory Data Analysis
-
-To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
-
-## Table description
-
-????
-
-For this data analysis, we will see different graphs....
-
 ## Summary statistics
+
+Summary statistics are generated for all numeric variables in the cleaned dataset to provide an overview of central tendencies, dispersion, and the presence of potential outliers.
+
+```{r}
+# Summary statistics for key numeric features
+dataset_clean %>%
+  select(c(where(is.numeric), is_explicit)) %>%
+  summary() %>%
+  kable() %>%
+  kable_styling()
+
+```
+
 
 The summary statistics table provides an overview of the central tendencies and dispersion of key variables in the dataset.
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
-The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)* The audio preview below:
-
-```{=html}
-<audio controls>
-  <source src="https://p.scdn.co/mp3-preview/2da01a5ad77fddb1bc2b0ed9e138a74eabe43333?cid=9950ac751e34487dbbe027c4fd7f8e99" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
-```
+The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)*.
 
 The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit. The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range. Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
 
-```{r}
-dataset_clean %>%
-  summary() %>%
-  kable() %>%
-  kable_styling()
-```
+
+## Correlation Matrix
+
+# 3. Exploratory Data Analysis
+
+To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
 
 ## Correlation matrix
 
@@ -474,7 +399,7 @@ Release year is the dependent variable in this analysis, and it is considered at
 track_dens <- dataset_clean %>% 
   filter(track_number!=0) %>% 
   ggplot(aes(x=track_number)) +
-  geom_histogram(fill='blue', color='black') + 
+  geom_histogram(binwidth= 1, fill='blue', color='black') + 
   theme_minimal() +
   labs(title = "Track number density", y="Density", x="track number")
 track_dens
@@ -575,13 +500,15 @@ duration_pop <- dataset_clean %>%
   drop_na() %>%
   mutate(duration_ms = duration_ms/1000) %>% 
   ggplot(aes(y=duration_ms, x=popularity)) +
-  geom_point(color="blue")
+  geom_point(color="blue") +
+  labs(title="Relationship between Track Duration and popularity", x="Popularity", y="Duration (s)") +
+  theme_minimal()
 duration_pop
 ```
 
 The scatter plot shows no strong correlation between duration and popularity, though popular songs tend to have standard lengths, while very long tracks are generally less popular.
 
-### is_explicit
+### Explicit
 
 The proportion of explicit versus non-explicit songs is analyzed over time to observe how the prevalence of explicit content has evolved across different release years.
 
@@ -625,9 +552,9 @@ line_explicit <- dataset_clean %>%
   ggplot(aes(x = release_year, y = explicit_count)) +
   geom_line(color = "blue", size = 1) +
   labs(
-    title = "Share of Explicit Songs Over Time",
+    title = "Number of Explicit Songs Over Time",
     x = "Year",
-    y = "Share of Explicit Songs"
+    y = "Count of Explicit Songs"
   ) +
   theme_minimal()
 line_explicit
@@ -662,14 +589,13 @@ explicit_popdate <- dataset_clean %>%
     name = "Explicit",
     labels = c("FALSE" = "Non-Explicit", "TRUE" = "Explicit")
   ) +
-  geom_point() +
+  geom_point(alpha=0.7) +
   labs(
     title = "Popularity by year with explicit status",
     x = "Release Year",
     y = "Popularity"
   ) +
   theme_minimal()
-   #+ facet_wrap(vars(is_explicit))
 explicit_popdate
 ```
 
@@ -683,7 +609,8 @@ Popularity serves as a valuable proxy for a song’s commercial success and audi
 # Summary statistics for key numeric features
 dataset_clean %>%
   select(track_name, artist_names, popularity) %>% 
-  arrange(desc(popularity)) %>%
+  rename(c(`Track Name`=track_name, `Artist Names`=artist_names, `Popularity` = popularity)) %>% 
+  arrange(desc(Popularity)) %>%
   head() %>% 
   kable() %>%
   kable_styling()
@@ -704,13 +631,12 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-The chart shows peaks in popularity for early and recent songs. Older tracks remain culturally relevant, while the recent rise reflects the streaming era’s impact on visibility and access.
-
-While the high popularity of recent songs is expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that many of these songs—such as those by The Beatles—have maintained lasting cultural relevance and continue to be featured in playlists and rankings, preserving their popularity across generations.
+The chart shows peaks in popularity for early and recent songs. 
+While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
 
 ## Text mining
 
-This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks. The goal is to identify the top 30 most frequently appearing artists in the dataset.
+This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks. The goal is to identify the top 20 most frequently appearing artists in the dataset.
 
 ```{r}
 # Separate multiple artists
@@ -720,14 +646,14 @@ top_artists <- dataset_clean %>%
   unnest(artist_names) %>%
   mutate(artist_names = str_trim(artist_names)) %>%
   count(artist_names, sort = TRUE) %>%
-  slice_head(n = 30)
+  slice_head(n = 20)
 
 # Plot
 artist_bar <- ggplot(top_artists, aes(x = reorder(artist_names, n), y = n)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   coord_flip() +
   labs(
-    title = "Top 30 Artists by Song Count",
+    title = "Top 20 Artists by Song Count",
     x = "Artist",
     y = "Number of Songs"
   ) +
@@ -747,6 +673,7 @@ artist_pop <- dataset_clean %>%
   summarise(avg_pop = mean(popularity, na.rm = TRUE)) %>%
   arrange(desc(avg_pop)) %>%
   slice_head(n=10) %>% 
+  rename(c(`Artist Name`= artist_names, `Average Popularity`= avg_pop)) %>% 
   kable() %>%
   kable_styling()
 artist_pop
@@ -764,6 +691,7 @@ artist_len <- dataset_clean %>%
   summarise(avg_time = mean(duration_ms, na.rm = TRUE)) %>%
   arrange(desc(avg_time)) %>%
   slice_head(n=10) %>% 
+  rename(c(`Artist Name` = artist_names, `Avg. Song duration`= avg_time)) %>% 
   kable() %>%
   kable_styling()
 artist_len
@@ -781,6 +709,7 @@ artist_len_inc <- dataset_clean %>%
   summarise(avg_time = mean(duration_ms, na.rm = TRUE)) %>%
   arrange(avg_time) %>%
   slice_head(n=10) %>% 
+  rename(c(`Artist Name` = artist_names, `Avg. Song duration`= avg_time)) %>% 
   kable() %>%
   kable_styling()
 artist_len_inc
@@ -796,11 +725,16 @@ top_genres <- dataset_clean %>%
   unnest(artist_genres) %>%
   mutate(artist_genres = str_trim(artist_genres)) %>%
   count(artist_genres, sort = TRUE) %>%
-  slice_head(n = 20)
+  slice_head(n = 20) %>% 
+  mutate(nogenre = ifelse(artist_genres=="No genre", "TRUE", "FALSE"))
 
 # Plot
-genre_bar <- ggplot(top_genres, aes(x = reorder(artist_genres, n), y = n)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+genre_bar <- ggplot(top_genres, aes(x = reorder(artist_genres, n), y = n, fill = nogenre)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(
+    values = c("TRUE" = "red", "FALSE" = "steelblue"),
+    guide = "none"
+  ) +
   coord_flip() +
   labs(
     title = "Top 20 Genres by Song Count",
@@ -808,6 +742,7 @@ genre_bar <- ggplot(top_genres, aes(x = reorder(artist_genres, n), y = n)) +
     y = "Number of Songs"
   ) +
   theme_minimal()
+
 genre_bar
 ```
 
@@ -822,6 +757,7 @@ genre_pop <- dataset_clean %>%
   summarise(avg_pop= mean(popularity, na.rm = TRUE)) %>%
   arrange(desc(avg_pop)) %>%
   slice_head(n=10) %>% 
+  rename(c(`Genres` = artist_genres, `Average Popularity`= avg_pop)) %>% 
   kable() %>%
   kable_styling()
   
@@ -854,7 +790,7 @@ We'll start by fitting a k-means clustering. First, we need to determine the opt
 fviz_nbclust(clustering_data,
              kmeans,
              method='wss',
-             k.max = 100,
+             k.max = 10,
              verbose = FALSE)
 
 ```
@@ -862,31 +798,29 @@ fviz_nbclust(clustering_data,
 As can be seen, the elbow seems to converge at around 5 clusters. We will therefore, take this as our number of clusters.
 
 ```{r}
-song_km <- kmeans(clustering_data, centers=30)
+song_km <- kmeans(clustering_data, centers=5)
 ```
 
-To inspect these clusters we will start by having boxplots
+To inspect these clusters we will start by creating boxplots
 
 ```{r}
 song_comp <- data.frame(clustering_data, 
                         Clust=factor(song_km$cluster),
                         Id=row.names(dataset_clean))
 song_df <- melt(song_comp, id=c("Id", "Clust"))
-head(song_df, 10)
 
 ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
   geom_boxplot() +
   facet_wrap(~variable)
 ```
 
-As can be seen, no pattern seems to emerge from the k-means clustering. We may still attempt to have hierarchical clustering.
+No pattern seems to emerge from the k-means clustering.
 
 ### Hierarchical clustering
 
 ```{r}
 song_distances <- dist(clustering_data, method = "manhattan")
 song_melt <- melt(as.matrix(song_distances)) 
-head(song_melt)
 ```
 
 ```{r}
@@ -897,14 +831,45 @@ song_hc <- hclust(song_distances, method="complete")
 plot(song_hc, hang=-1)
 rect.hclust(song_hc, k=13)
 song_clust_hc <- cutree(song_hc, k=13)
-song_clust_hc
 ```
 
 Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way.
 
 ### PCA
 
+```{r, echo=FALSE}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+songs_pca
+```
+
 ```{r}
+fviz_pca_var(songs_pca)
+```
+
+```{r}
+fviz_contrib(songs_pca, choice = "var", axes = 1)
+```
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+
+
+
+```{r}
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
+
+```{r, message=FALSE}
 # 1. Prepare numeric data and keep release_year for color
 pca_data <- dataset_clean %>%
   filter(release_year>0) %>% 
@@ -945,6 +910,9 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
   ) +
   theme_minimal()
 ```
+
+
+## Supervised Learning Methodology
 
 ```{r}
 pca_data <- dataset_clean %>%
@@ -990,13 +958,13 @@ grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ### Random Forest with undersampling
 
 ```{r}
-spotify_year <- dataset_clean |>
+spotify_dec <- dataset_clean |>
   mutate(
     year = as.numeric(substr(release_date, 1, 4)),
     decade = floor(year / 10) * 10
   )
 
-spotify_dec  <- spotify_year |>
+spotify_dec |>
   count(decade, sort = TRUE)
 ```
 
@@ -1038,14 +1006,16 @@ features <- c("danceability", "energy", "acousticness", "instrumentalness",
               "liveness", "loudness", "speechiness", "tempo", "valence", "duration_ms")
 
 df <- spotify_balanced |>
-  select(all_of(features), decade_group) |>
+  select(features, decade_group) |>
   rename(decade = decade_group) |>
   mutate(decade = as.factor(decade)) |>
   na.omit()
 
-split <- initial_split(df, prop = 0.8, strata = decade)
-train <- training(split)
-test <- testing(split)
+n <- nrow(df)
+
+split <- sample(1:n, size = round(0.7*n), replace=FALSE)
+train <- df[split ,]
+test <-  df[-split ,]
 
 # Fit model
 rf_model <- randomForest(decade ~ ., data = train)
@@ -1080,14 +1050,6 @@ confusionMatrix(pred, test$decade)
 ### Random Forest on median year
 
 ```{r}
-spotify_binary <- spotify_year |>
-  mutate(
-    after_median = if_else(year > median(year, na.rm = TRUE), "after", "before"),
-    after_median = as.factor(after_median)
-  )
-```
-
-```{r}
 spotify_clean <- dataset_clean |>
   mutate(year = as.numeric(substr(release_date, 1, 4)))
 
@@ -1102,7 +1064,7 @@ spotify_binary <- spotify_clean |>
   )
 ```
 
-The median song was release in 2007. We are going to perform a random forest on wether the song was release before or after this year.
+The median song was release in 2007. We are going to perform a random forest on whether the song was release before or after this year.
 
 ```{r}
 features <- c("danceability", "energy", "acousticness", "instrumentalness",
@@ -1156,108 +1118,24 @@ The model was built and fitted using python and the **Keras** library, allowing 
 
 The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
 
-The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png) The code used to build the model can be seen below.
 
-```{python}
-#| eval: false
+The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png) 
 
-# load libraries
-import numpy as np
-import pandas as pd
-import os
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-from tensorflow.keras import layers, Model, utils
-from tensorflow.keras.utils import plot_model
-import matplotlib.pyplot as plt
+To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years. The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
 
-# Load CSVs
-df_images = pd.read_csv('data/clean/image_dataset.csv')
-tabular_df = pd.read_csv('data/clean/tabular_data.csv')
-df_images['filepath'] = df_images["filepath"].str.replace('/', "\\", regex=False)
+# Results Discussion
 
-# Merge on ID
-merged_df = df_images.merge(tabular_df, on='id', how='inner')
+## Unsupervised Learning
 
-# Keep numeric features, is_explicit is boolean but represented as numeric
-numeric_cols = [
-    "track_number", "duration_ms", "popularity", "danceability", "energy", "loudness", 
-    "speechiness", "acousticness", "instrumentalness", "liveness", "valence", "tempo", 
-    "time_signature", "is_explicit"
-]
-X_tab = merged_df[numeric_cols].values
-y = merged_df["release_year"].values
+### Clustering
 
-#normalization of the release year
-y_min, y_max = np.min(y), np.max(y)
-y_norm = (y - y_min) / (y_max - y_min)
+### PCA
 
-# Scale tabular input
-scaler = StandardScaler()
-X_tab_scaled = scaler.fit_transform(X_tab)
 
-# Load and resize images
-def load_image(filepath):
-    img = Image.open(filepath).convert("RGB").resize((64, 64))
-    return np.array(img) / 255.0
+## Supervised Learning
 
-X_img = np.stack([load_image(fp) for fp in merged_df['filepath']])
+### Neural Network 
 
-# Train/test split
-X_img_train, X_img_test, X_tab_train, X_tab_test, y_train, y_test = train_test_split(
-    X_img, X_tab_scaled, y_norm, test_size=0.2, random_state=42
-)
-
-# CNN branch
-img_input = layers.Input(shape=(64, 64, 3), name="img_input")
-x = layers.Conv2D(32, (3, 3), activation="relu")(img_input)
-x = layers.MaxPooling2D()(x)
-x = layers.Conv2D(64, (3, 3), activation="relu")(x)
-x = layers.MaxPooling2D()(x)
-x = layers.Flatten()(x)
-x = layers.Dense(64, activation="relu")(x)
-x = layers.Dropout(0.5)(x)
-
-# Tabular branch
-tab_input = layers.Input(shape=(X_tab.shape[1],), name="tab_input")
-t = layers.Dense(64, activation="relu")(tab_input)
-t = layers.Dense(32, activation="relu")(t)
-
-# Merge
-combined = layers.concatenate([x, t])
-z = layers.Dense(64, activation="relu")(combined)
-z = layers.Dense(1, activation="sigmoid")(z) 
-
-# Model
-model = Model(inputs=[img_input, tab_input], outputs=z)
-
-model.summary()
-model.save("figures/model.keras")
-
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-
-# Train
-history = model.fit(
-    {"img_input": X_img_train, "tab_input": X_tab_train},
-    y_train,
-    validation_split=0.2,
-    epochs=20,
-    batch_size=32
-)
-
-# Evaluate on normalized scale
-loss, mae = model.evaluate(
-    {"img_input": X_img_test, "tab_input": X_tab_test},
-    y_test
-)
-print(f"[Normalized] Test Loss: {loss:.4f}, MAE: {mae:.4f}")
-```
-
-As can be seen, the release year was normalized, knowing that the release years were located between 1955 and 2024, a normalization will help put every release year between 0 and 1. Therefore enabling predictions bounded between these maximum and minimums. This is also done with the use of a sigmoid activation function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
-
-Results
 
 The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
 
