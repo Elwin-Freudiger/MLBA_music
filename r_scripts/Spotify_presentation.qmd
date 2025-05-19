@@ -67,8 +67,8 @@ library(rsample)
 #| echo: false
 #| message: false
 library(readr)
-spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
-#spotify <- read_csv("top_10000_1950-now.csv")
+#spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
 # 1. Introduction
