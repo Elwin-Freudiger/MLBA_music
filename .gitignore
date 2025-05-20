@@ -175,9 +175,14 @@ cython_debug/
 
 # Add data to the gitignore
 data/raw
-data/clean/images
+/data/clean/images/*
 
-r_scripts/top_10000_1950-now.csv
+!/data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png
+!/data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png
+!/data/clean/images/2d4e45fmUnguxh6yqC7gNT.png
+!/data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png
 
 r_scripts/Test.qmd
 r_scripts/Test.pdf
+
+

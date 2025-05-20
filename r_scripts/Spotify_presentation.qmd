@@ -50,7 +50,7 @@ library(caret)
 ```
 
 ```{r,, echo=FALSE, warning=FALSE}
-spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+spotify <- read_csv("r_scripts/top_10000_1950-now.csv")
 #spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
