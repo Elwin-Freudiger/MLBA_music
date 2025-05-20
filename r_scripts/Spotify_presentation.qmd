@@ -23,7 +23,7 @@ abstract: |
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 #| echo: false
 #| message: false
 
@@ -108,14 +108,16 @@ All images are retrieved from their respective links, resized to be 64x64 pixels
 
 Image examples can be seen here:
 
-```{r album-covers, fig.cap="From left to right: RED by Taylor Swift, Short n' Sweet by Sabrina Carpenter, Dirty Deeds Done Dirt Cheap by AC/DC, Arrival by ABBA.", out.width='24%', fig.align='center'}
-knitr::include_graphics(c(
-  "../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png",
-  "../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png",
-  "../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png",
-  "../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png"
-))
-```
+::: {#fig-album layout-ncol=4}
+
+![Taylor Swift](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png){#fig-tay}
+![Sabrina Carpenter](../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png){#fig-carpenter}
+![AC/DC](../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png){#fig-acdc}
+![ABBA](../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png){#fig-abba}
+
+Examples of album covers, resized to 64×64 pixels and represented with RGB color channels
+:::
+
 
 ## Description
 
@@ -631,7 +633,7 @@ avg_pop_date
 
 The chart shows peaks in popularity for early and recent songs. While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
 
-## Text mining
+## Textual analysis
 
 This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks. The goal is to identify the top 20 most frequently appearing artists in the dataset.
 
@@ -797,142 +799,38 @@ PCA is a dimensionality reduction technique that transforms the original feature
 
 ## Unsupervised Learning
 
+Several methods can be used for unsupervised learning, among them, K-means clustering, Hierarchical Clustering and PCA were performed, due to somewhat disappointing results for Hierarchical Clustering and PCA, only K-means clustering was kept. Nevertheless, the code for other methods can be found in the Appendix, presented as is, without result analysis.
+
+
 ### Clustering
 
 ```{r}
 clustering_data <- dataset_clean %>% 
-  select(c(where(is.numeric), is_explicit)) %>% 
-  select(-c(release_year)) %>% 
+  select(where(is.numeric)) %>% 
+  select(-c(release_year, track_number, duration_ms, popularity)) %>% 
   drop_na() %>% 
   scale()
 ```
 
 ### K-means clustering
 
-We'll start by fitting a k-means clustering. First, we need to determine the optimal number of clusters to use.
+We'll start by fitting a k-means clustering, using the R package *factoextra*. 
+Only numeric variables were chosen to conduct this clustering experiment, and more specifically only track features were selected, these include: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, time_signature**. The decision to only take up an interest in these variables is because these were created by spotify, who does not release any information regarding these features and the calculation behind. One lead may be that these features are caclulated through some sort of clustering to help understand different features and music genres trough it. A clustering analysis of tracks is therefore quite fitting.
+
+The first step in clustering is to determine the optimal number of clusters. The metric used to choose the number of clusters is Total within-cluster sum of squares (TWSS). An elbow must be found, which will determine the choice of clusters.
 
 ```{r}
 fviz_nbclust(clustering_data,
              kmeans,
              method='wss',
-             k.max = 10,
+             k.max = 20,
              verbose = FALSE)
 
 ```
 
-As can be seen, the elbow seems to converge at around 5 clusters. We will therefore, take this as our number of clusters.
+Based on the graph, it was decided to chose 9 as the number of clusters.
+An analysis of these clusters can be found in result analysis section.
 
-```{r}
-song_km <- kmeans(clustering_data, centers=5)
-```
-
-To inspect these clusters we will start by creating boxplots
-
-```{r}
-song_comp <- data.frame(clustering_data, 
-                        Clust=factor(song_km$cluster),
-                        Id=row.names(dataset_clean))
-song_df <- melt(song_comp, id=c("Id", "Clust"))
-
-ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
-  geom_boxplot() +
-  facet_wrap(~variable)
-```
-
-No pattern seems to emerge from the k-means clustering.
-
-### Hierarchical clustering
-
-```{r}
-song_distances <- dist(clustering_data, method = "manhattan")
-song_melt <- melt(as.matrix(song_distances)) 
-```
-
-```{r}
-song_hc <- hclust(song_distances, method="complete")
-```
-
-```{r}
-plot(song_hc, hang=-1)
-rect.hclust(song_hc, k=13)
-song_clust_hc <- cutree(song_hc, k=13)
-```
-
-Hierarchical clustering does not seem to accurately show differences between songs. Many reasons may lead to it being this way.
-
-### PCA
-
-```{r, echo=FALSE}
-pca_data <- dataset_clean %>%
-  filter(release_year>0) %>% 
-  drop_na() %>% 
-  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
-  scale()
-
-songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
-songs_pca
-```
-
-```{r}
-fviz_pca_var(songs_pca)
-```
-
-```{r}
-fviz_contrib(songs_pca, choice = "var", axes = 1)
-```
-
-```{r}
-fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
-```
-
-```{r}
-p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
-p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
-p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
-grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
-```
-
-```{r, message=FALSE}
-# 1. Prepare numeric data and keep release_year for color
-pca_data <- dataset_clean %>%
-  filter(release_year>0) %>% 
-  drop_na() %>% 
-  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
-  scale()
-
-# 2. Run PCA on everything except release_year
-pca_result <- prcomp(pca_data, scale. = TRUE)
-
-# 3. Extract PCA scores and add release year for coloring
-pca_scores <- as.data.frame(pca_result$x[, 1:2])
-release_years <- dataset_clean %>%
-  filter(release_year > 0) %>%
-  drop_na() %>%
-  pull(release_year)
-pca_scores$release_year <- release_years
-
-# 4. Extract loading for arrows
-loadings <- as.data.frame(pca_result$rotation[, 1:2])
-loadings$variable <- rownames(loadings)
-
-# 5. Plot PCA with arrows and color by release year
-ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
-  geom_point(alpha = 0.6) +
-  scale_color_viridis_c(option = "plasma") +
-  geom_segment(data = loadings,
-               aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5),  # arrows, scaled
-               arrow = arrow(length = unit(0.2, "cm")), color = "gray30") +
-  geom_text(data = loadings,
-            aes(x = PC1 * 5.3, y = PC2 * 5.3, label = variable),
-            size = 3, color = "gray20") +
-  labs(
-    title = "PCA Biplot of Song Features",
-    x = "PC1",
-    y = "PC2",
-    color = "Release Year"
-  ) +
-  theme_minimal()
-```
 
 ## Supervised Learning Methodology
 
@@ -1178,7 +1076,171 @@ To build the model, the release year was normalized, Therefore enabling predicti
 
 ### Clustering
 
-### PCA
+Based on the methodology discussed above, k-means clustering was run with 9 centers.
+
+```{r}
+song_km <- kmeans(clustering_data, centers=9)
+```
+
+Boxplots are created to inspect these clusters.
+
+```{r}
+song_comp <- data.frame(clustering_data, 
+                        Clust=factor(song_km$cluster),
+                        Id=row.names(dataset_clean))
+song_df <- melt(song_comp, id=c("Id", "Clust"))
+
+ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable)
+```
+Some patterns seem to emerge from this clustering. Cluster 9 appears to have lower values for mode compared to others. Cluster 4 has higher speechiness, while clusters 5 and 6 show slightly more acousticness. Cluster 5 also has much higher instrumentalness, and cluster 7 has a significantly lower time signature than the rest.
+
+
+```{r}
+song_comp <- data.frame(
+  clustering_data,
+  Clust = factor(song_km$cluster),
+  Id = row.names(dataset_clean),
+  release_year = dataset_clean$release_year
+) %>% filter(release_year > 0)
+```
+
+```{r}
+song_comp %>%
+  group_by(Clust) %>%
+  summarise(
+    count = n(),
+    mean_year = mean(release_year, na.rm = TRUE),
+    median_year = median(release_year, na.rm = TRUE)
+  ) %>% 
+  rename(`Cluster`= Clust, `Mean Year` = mean_year, `Median Year`= median_year) %>% 
+  kable() %>%
+  kable_styling()
+```
+
+Looking at the release year, some patterns emerge. In terms of count, clusters **1** and **9** contain the most observations.
+Cluster 9 stands out for having the lowest median release year overall.
+It is also important to note that differences between the mean and median values—as well as the overall shift toward recent years—are likely due to an imbalance in the dataset, with more recent tracks represented.
+
+The same analysis can be applied to identify genres within each cluster.
+
+```{r}
+song_genres <- dataset_clean %>%
+  mutate(
+    Id = row.names(dataset_clean),
+    artist_genres = replace_na(artist_genres, "No genre")
+  ) %>%
+  select(Id, artist_genres) %>%
+  left_join(song_comp %>% select(Id, Clust), by = "Id") %>%
+  mutate(artist_genres = str_split(artist_genres, ",")) %>%
+  unnest(artist_genres) %>%
+  mutate(artist_genres = str_trim(artist_genres))
+```
+
+
+```{r}
+# Count total genre appearances
+genre_totals <- song_genres %>%
+  count(artist_genres, name = "total_n")
+
+# Count genre appearances in clusters
+genre_counts_by_cluster <- song_genres %>%
+  count(Clust, artist_genres, name = "cluster_n")
+
+# Fix cluster sizes (based on unique songs)
+cluster_tot <- song_genres %>%
+  distinct(Id, Clust) %>%
+  count(Clust, name = "cluster_size")
+
+# Combine and compute proportions
+top_genres_by_cluster <- genre_counts_by_cluster %>%
+  left_join(genre_totals, by = "artist_genres") %>%
+  left_join(cluster_tot, by = "Clust") %>%
+  mutate(
+    rel_in_cluster = cluster_n / total_n,       # genre-centric
+    cluster_percent = cluster_n / cluster_size  # cluster-centric
+  ) %>% 
+  drop_na()
+```
+
+
+```{r}
+Top_songs <- top_genres_by_cluster %>% 
+  group_by(Clust) %>%
+  slice_max(order_by = cluster_n, n = 5) %>%
+  ungroup() %>%
+  ggplot(aes(x = reorder(artist_genres, cluster_n), y = cluster_n, fill = Clust)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Clust, scales = "free_y") +
+  coord_flip() +
+  labs(
+    title = "Top Genres by Cluster",
+    x = "Genre",
+    y = "Count"
+  ) +
+  theme_minimal()
+Top_songs
+```
+While this graph is interesting, it does not account for the overall distribution of genres. For instance, *Pop* and *Dance Pop* are by far the most present genres in the dataset with respectively *2660* and *1655* instances. To address this, we compute the relative proportion of each genre $rel_in_cluster = cluster_n / total_n$, for example, pop appears 599 times in Cluster 1 out of 2660 total appearances.
+Only genres with at least 500 appearances are considered to focus only on main genres instead of niche ones.
+
+```{r}
+top_genres_by_cluster %>% 
+  filter(total_n >= 500) %>% 
+  group_by(Clust) %>%
+  slice_max(order_by = rel_in_cluster, n = 2, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(c(Clust, artist_genres, rel_in_cluster, total_n)) %>% 
+  kable() %>% 
+  kable_styling()
+```
+
+
+We identify the top two genres for each cluster.  
+- **Cluster 1**: Dominated by Pop songs.  
+- **Cluster 2**: Rock is the most frequent genre.  
+- **Cluster 3**: Features Singer-Songwriter and Mellow Gold, often from artists like Eric Clapton, George Harrison, or Bob Dylan—suggesting influences from folk, country, and soft rock.  
+- **Cluster 4**: Primarily contains rap music.  
+- **Cluster 5**: Largely composed of tracks labeled "No genre" and New Wave, likely reflecting more niche or lower-popularity songs.  
+- **Cluster 6**: Again features Soft Rock and Mellow Gold, indicating some similarity with Cluster 3.  
+- **Cluster 7**: Includes many songs with no genre and some Singer-Songwriter.  
+- **Cluster 8**: Appears to be focused on Australian music.  
+- **Cluster 9**: Dominated by Pop and Dance Pop.  
+
+This clustering also reveals trends related to popularity. Some clusters may represent more popular songs than others. This can be visualized easily using boxplots.
+
+```{r}
+song_pop <- data.frame(
+  clustering_data,
+  Clust = factor(song_km$cluster),
+  Id = row.names(dataset_clean),
+  popularity = dataset_clean$popularity
+)
+
+```
+
+```{r}
+ggplot(song_pop, aes(x = Clust, y = popularity, fill = Clust)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Popularity Distribution by Cluster",
+    x = "Cluster",
+    y = "Popularity"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+Surprisingly, the differences in popularity between clusters are not as pronounced as one might expect. Nevertheless, Cluster 4—dominated by rap—appears to be the most popular. Clusters 5 and 7, which include many songs with "No genre" labels, seem to be the least popular.
+
+### Conclusion
+
+To conclude, one key takeaway from this clustering analysis is that the large volume of tracks likely affects the clarity of the results. Still, meaningful insights can be drawn—especially regarding genres. The analysis suggests that genres are, at least partially, distinguishable using Spotify’s audio features.
+
+Release year and popularity offer additional context. The main insight is that our dataset contains significantly more recent songs, and that these tend to be more popular. Currently, genres such as *Pop*, *Dance Pop*, *Rap*, and *Hip-Hop* dominate popular music.
+
 
 ## Supervised Learning
 
@@ -1198,7 +1260,103 @@ These results show no sign of overfitting, regarding the metrics themselves, one
 
 # 7. Appendix
 
-# 8. References
+## Hierarchical clustering
+
+```{r}
+song_distances <- dist(clustering_data, method = "manhattan")
+song_melt <- melt(as.matrix(song_distances)) 
+```
+
+```{r}
+song_hc <- hclust(song_distances, method="complete")
+```
+
+```{r}
+plot(song_hc, hang=-1)
+rect.hclust(song_hc, k=9)
+song_clust_hc <- cutree(song_hc, k=9)
+```
+
+Due to poor performance from the hierarchical clustering, the decision was made to only focus on k-means clustering. In subsequent studies, a deeper focus on this clustering technique could be conducted.
+
+## Principal component analysis
+
+```{r, echo=FALSE}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+songs_pca
+```
+
+```{r}
+fviz_pca_var(songs_pca)
+```
+
+```{r}
+fviz_contrib(songs_pca, choice = "var", axes = 1)
+```
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+
+
+
+```{r}
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
+
+```{r, message=FALSE}
+# 1. Prepare numeric data and keep release_year for color
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+# 2. Run PCA on everything except release_year
+pca_result <- prcomp(pca_data, scale. = TRUE)
+
+# 3. Extract PCA scores and add release year for coloring
+pca_scores <- as.data.frame(pca_result$x[, 1:2])
+release_years <- dataset_clean %>%
+  filter(release_year > 0) %>%
+  drop_na() %>%
+  pull(release_year)
+pca_scores$release_year <- release_years
+
+# 4. Extract loading for arrows
+loadings <- as.data.frame(pca_result$rotation[, 1:2])
+loadings$variable <- rownames(loadings)
+
+# 5. Plot PCA with arrows and color by release year
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
+  geom_point(alpha = 0.6) +
+  scale_color_viridis_c(option = "plasma") +
+  geom_segment(data = loadings,
+               aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5),  # arrows, scaled
+               arrow = arrow(length = unit(0.2, "cm")), color = "gray30") +
+  geom_text(data = loadings,
+            aes(x = PC1 * 5.3, y = PC2 * 5.3, label = variable),
+            size = 3, color = "gray20") +
+  labs(
+    title = "PCA Biplot of Song Features",
+    x = "PC1",
+    y = "PC2",
+    color = "Release Year"
+  ) +
+  theme_minimal()
+```
+
+# References
+
 
 Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023). *Songs popularity analysis using Spotify data: An exploratory study*. In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223). https://www.researchgate.net/publication/384286217
 
