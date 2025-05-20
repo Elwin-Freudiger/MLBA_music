@@ -50,12 +50,11 @@ library(caret)
 ```
 
 ```{r,, echo=FALSE, warning=FALSE}
-library(readr)
-
-spotify <- read_csv("top_10000_1950-now.csv")
+spotify <- read_csv("~/ML project/top_10000_1950-now.csv")
+#spotify <- read_csv("top_10000_1950-now.csv")
 ```
 
-# Introduction
+# 1. Introduction
 
 The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024. Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
 
@@ -91,7 +90,7 @@ Moreover, by investigating the relationships between explicitness, duration, and
 
 Finally, this study serves as a practical application of machine learning techniques in the music domain, offering insights for musicologists, data scientists, and digital media analysts interested in the computational modeling of cultural data.
 
-# Data
+# 2. Data
 
 ## Sources
 
@@ -108,6 +107,7 @@ In order to enhance the predictions, album covers were selected to be added as i
 All images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store. All images are then saved locally, with their Spotify Song ID as a filename. This process was performed in parallel using multi-treading. This enables a much faster processing time.
 
 Image examples can be seen here:
+
 ::: {#fig-album layout-ncol=4}
 
 ![Taylor Swift](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png){#fig-tay}
@@ -117,6 +117,7 @@ Image examples can be seen here:
 
 Examples of album covers, resized to 64×64 pixels and represented with RGB color channels
 :::
+
 
 ## Description
 
@@ -257,30 +258,33 @@ knitr::kable(head(spotify_vr),
 
 The procedure involves identifying and counting missing values in the dataset, detecting rows containing incomplete information, and removing those with missing or empty loudness values. Then, the release year is extracted from the release date and converted to a numeric format, producing a cleaned dataset ready for further analysis.
 
-The dataset have a total of 625 missing values, including 551 for the 'artist_genres'.
-
-We are going to drop the instance with missing feature about the music.
+The dataset have a total of 625 missing values before cleaning. After cleaning we still have 547 missing values, all of them concern the *artist_genres*.
 
 ```{r}
+#| echo: false
+#| message: false
+
 # Count total missing values
 sum(is.na(spotify_vr))  # This will return the total number of NAs
-
-# Show missing values per column
-colSums(is.na(spotify_vr))
-
-#Rows with missing values
-rows_with_missing <- spotify_vr |>
-  filter(if_any(everything(), ~ is.na(.) | . == ""))
-
-# View the rows
-rows_with_missing
 
 dataset_clean <- spotify_vr |>
   filter(!is.na(loudness) & loudness != "") %>% 
   mutate(release_year = as.numeric(substr(release_date, start = 1, stop = 4)))
 
-colSums(is.na(dataset_clean))
+#Drop instance with missing release date
+dataset_clean <- dataset_clean |>
+  filter(release_date != "0000")
 
+colSums(is.na(dataset_clean)) |>
+  head(20) |>  # Limit to first 20 rows for readability
+  kable(
+    format = "html",
+    caption = "Rows with Missing or Blank Values"
+  ) |>
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE
+  )
 ```
 
 The dataset contains a total of 625 missing values, of which 551 correspond to the *artist_genres* variable. Instances with missing values in variables related to musical characteristics are excluded from the analysis to ensure data quality and consistency.
@@ -325,7 +329,6 @@ dataset_clean %>%
 
 ```
 
-
 The summary statistics table provides an overview of the central tendencies and dispersion of key variables in the dataset.
 
 As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
@@ -336,26 +339,15 @@ The is_explicit variable is highly imbalanced, with approximately 95% of the son
 
 ## Correlation Matrix
 
-A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
-
-```{r}
-spotify_num <- dataset_clean %>%
-  select_if(is.numeric) %>%
-  na.omit()
-
-corrplot(cor(spotify_num), method = "color", type = "upper", tl.cex = 0.7)
-
-```
-
-The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
-
-# Exploratory Data Analysis
+# 3. Exploratory Data Analysis
 
 To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
 
 ## Correlation matrix
 
-A correlation matrix was computed and visualized to examine linear relationships between all numeric features in the dataset, highlighting potential associations and redundancies among audio variables.
+A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
+
+The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
 
 ```{r}
 #start by selecting numeric columns
@@ -639,8 +631,7 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-The chart shows peaks in popularity for early and recent songs. 
-While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
+The chart shows peaks in popularity for early and recent songs. While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
 
 ## Textual analysis
 
@@ -772,9 +763,39 @@ genre_pop <- dataset_clean %>%
 genre_pop
 ```
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be continued:
+# 4. Machine Learning Methods
 
-# Machine Learning Methods
+In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods. Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
+
+### **Supervised Learning Methods**
+
+Supervised learning involves building models that learn from labeled data, where the outcome variable (in our case, the song's year) is known. The goal is to find a function that best predicts this outcome from a set of features.
+
+#### **Random Forest**
+
+Random Forest (RF) is an ensemble learning method that builds a large number of decision trees during training and outputs either the mode (for classification) or the mean (for regression) of the individual tree predictions. It combines two key ideas: bagging (training trees on bootstrapped samples of the data) and random feature selection at each split, which helps reduce variance and improve model generalization. In this context, RF will be used to predict the release year of a song as a regression task, leveraging its robustness to overfitting and capacity to handle complex interactions between features.
+
+#### **Neural Networks**
+
+Artificial Neural Networks (NN) are flexible, layered models composed of nodes (neurons) that compute weighted sums of inputs and apply non-linear activation functions. They are particularly effective for capturing complex, non-linear relationships in data. In our study, we use NNs with one or more hidden layers to model the relationship between musical features and the year of release, treating this as a regression problem. The model is trained using gradient descent to minimize a loss function, typically the mean squared error (MSE).
+
+### **Unsupervised Learning Methods**
+
+Unsupervised learning does not use labeled data but instead focuses on uncovering hidden structures within the data. This can be particularly useful in exploratory phases to detect patterns and validate assumptions about the features.
+
+#### **K-means Clustering**
+
+K-means is a partitioning method that groups data into a predefined number of clusters (k) by minimizing the within-cluster sum of squares. The algorithm iteratively assigns each instance to the nearest cluster centroid and updates the centroids until convergence. In our analysis, K-means is used to examine whether natural groupings exist among songs based on their musical attributes, potentially revealing eras or genres that influence the release year.
+
+#### **Hierarchical Clustering**
+
+Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points. We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step. This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
+
+#### **Principal Component Analysis (PCA)**
+
+PCA is a dimensionality reduction technique that transforms the original features into a smaller number of uncorrelated components that retain most of the data variance. In this study, PCA is used to reduce the high-dimensional musical feature space into a more manageable form for visualization and clustering. Additionally, PCA components may be used as inputs to supervised models to mitigate multicollinearity and improve performance.
+
+# 5. Results
 
 ## Unsupervised Learning
 
@@ -806,14 +827,49 @@ fviz_nbclust(clustering_data,
              verbose = FALSE)
 
 ```
+
 Based on the graph, it was decided to chose 9 as the number of clusters.
 An analysis of these clusters can be found in result analysis section.
 
+
 ## Supervised Learning Methodology
 
-### Random Forest Balanced
+```{r}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
 
-### Regression
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+songs_pca
+```
+
+```{r}
+fviz_pca_var(songs_pca)
+```
+
+```{r}
+fviz_contrib(songs_pca, choice = "var", axes = 1)
+```
+
+```{r}
+fviz_pca_biplot(songs_pca)
+```
+
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+```{r}
+library(gridExtra)
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
+
+## Supervised Learning
 
 ### Random Forest with undersampling
 
@@ -897,6 +953,27 @@ print(accuracy)
 
 # Confusion Matrix
 confusionMatrix(pred, test$decade)
+
+cm <- confusionMatrix(predict(rf_model, newdata = test), test$decade)
+cm_df <- as.data.frame(cm$table)
+
+ggplot(cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white", size = 5) +
+  scale_fill_gradient(low = "steelblue", high = "darkred") +
+  theme_minimal() +
+  labs(title = "Confusion Matrix Heatmap")
+```
+
+```{r}
+tree_model <- rpart(decade ~ ., data = train, method = "class")
+
+# Plot it
+rpart.plot(tree_model,
+           type = 2,          # labels all nodes
+           extra = 104,       # show class probabilities + percentages
+           fallen.leaves = TRUE,
+           main = "Decision Tree")
 ```
 
 **Accuracy** (0.410): correctly predict the decade 41% of the time
@@ -958,6 +1035,17 @@ library(caret)
 confusionMatrix(pred, test$after_median)
 ```
 
+```{r}
+tree_model <- rpart(after_median ~ ., data = train, method = "class")
+
+# Plot it
+rpart.plot(tree_model,
+           type = 2,          # labels all nodes
+           extra = 104,       # show class probabilities + percentages
+           fallen.leaves = TRUE,
+           main = "Decision Tree")
+```
+
 **Accuracy** (0.764): correctly classify \~76% of the songs.
 
 **Kappa** (0.525): moderate agreement beyond chance, pretty good.
@@ -978,7 +1066,7 @@ The model was built and fitted using python and the **Keras** library, allowing 
 
 The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
 
-The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png) 
+The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png)
 
 To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years. The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
 
@@ -1153,9 +1241,10 @@ To conclude, one key takeaway from this clustering analysis is that the large vo
 
 Release year and popularity offer additional context. The main insight is that our dataset contains significantly more recent songs, and that these tend to be more popular. Currently, genres such as *Pop*, *Dance Pop*, *Rap*, and *Hip-Hop* dominate popular music.
 
+
 ## Supervised Learning
 
-### Neural Network 
+### Neural Network
 
 The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
 
@@ -1167,10 +1256,9 @@ The model was trained with 20 epochs and a batch size of 32 returned the followi
 
 These results show no sign of overfitting, regarding the metrics themselves, one should keep in mind that these metrics are for normalized years. Therefore, a mean absolute error of 0.1139 over the 69(2024-1955) years of study means that the model is on average off by 7.8 years. The R-squared score shows that while the model may capture some of the variance, a big part is due to other factors.
 
-# Conclusive discussion
+# 6. Conclusion & discussion
 
-# Appendix
-
+# 7. Appendix
 
 ## Hierarchical clustering
 
@@ -1268,6 +1356,7 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
 ```
 
 # References
+
 
 Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023). *Songs popularity analysis using Spotify data: An exploratory study*. In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223). https://www.researchgate.net/publication/384286217
 
