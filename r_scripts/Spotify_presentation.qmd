@@ -761,8 +761,6 @@ genre_pop <- dataset_clean %>%
 genre_pop
 ```
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ to be continued:
-
 # 4. Machine Learning Methods
 
 In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods. Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
