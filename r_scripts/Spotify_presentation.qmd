@@ -58,12 +58,24 @@ spotify <- read_csv("top_10000_1950-now.csv", show_col_types = FALSE)
 
 # Introduction
 
-The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024.
-Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
+The analysis of popular music through computational methods offers a unique lens into the cultural, technological, and artistic shifts that have defined society across decades.
+With the proliferation of digital streaming platforms and the availability of rich, structured audio datasets, the intersection of music and data science has emerged as a fertile ground for scholarly exploration.
+This study leverages machine learning techniques to analyze 10,000 top-charting songs from ARIA and Billboard rankings, spanning over seventy years, to investigate temporal patterns and predictive markers in musical composition.
 
-From a machine learning perspective, the project focuses on both supervised and unsupervised learning tasks.
-This includes building predictive models to estimate a song’s release period based on its features, and using clustering algorithms to uncover latent patterns in the data.
-The goal is not only to analyze historical music trends but also to assess the feasibility and accuracy of predictive modeling in the context of music analytics.
+Spotify, as the leading global music streaming platform, is not only a primary source of standardized audio and metadata features but also a pivotal player in shaping contemporary listening habits.
+Its API offers detailed descriptors such as tempo, danceability, energy, valence, and acousticness, which reflect both perceptual and technical properties of recorded music (Spotify for Developers, 2024).
+These features enable large-scale, reproducible analysis of musical trends across time.
+Beyond its role as a data provider, Spotify functions as an active cultural intermediary.
+Its proprietary popularity score—a dynamic measure influenced by recent streaming activity, user interactions, and playlist placements—does not merely reflect public interest but contributes to shaping it through algorithmic recommendations (Eriksson et al., 2019).
+This self-reinforcing feedback loop positions Spotify as a gatekeeper in the music industry, influencing not only what is heard but what is produced.
+As a result, understanding how musical features correlate with time-based patterns also provides insights into broader shifts driven by the platform economy.Spotify’s business model, centered on user engagement and advertising or subscription-based monetization, incentivizes behaviors that are increasingly mirrored in music production itself.
+Empirical studies have noted a trend toward shorter songs, quicker hooks, and higher replay value, aligned with Spotify’s payout structure that rewards full plays over partial ones (Aguiar et al., 2018).
+This suggests a convergence between data-informed curation algorithms and creative decisions in the studio, making it essential to consider both technological and economic contexts when analyzing musical evolution.
+Moreover, the inclusion of album artwork as a predictive input in this study reflects Spotify’s visual turn—where cover aesthetics influence playlist inclusion, click-through rates, and perceived genre alignment (Seaver, 2022).
+By incorporating both auditory and visual data, this project recognizes the multimodal nature of contemporary music consumption.
+
+Through a combination of supervised and unsupervised machine learning methods, this study not only examines the historical trajectory of popular music but also assesses the extent to which Spotify-derived features capture meaningful temporal signals.
+In doing so, it contributes to computational musicology while offering industry-relevant insights into how platform-mediated dynamics shape musical production, distribution, and reception in the digital age.
 
 # Literature review
 
@@ -131,7 +143,7 @@ As such, it provides a robust foundation for both exploratory data analysis and 
 The dataset comprises 10,000 entries and 35 variables, encompassing information related to song popularity, artist identity, release date, and various musical attributes.
 
 | Variable | Description | Category | Example |
-|---------------|-----------------------------|---------------|---------------|
+|----------------|-------------------------|----------------|----------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
@@ -1114,7 +1126,8 @@ songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
 fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
 ```
 
-The above graph shows the percentage of explained variance by dimension. As can be observed, the variance explained by 3 dimensions is only 49.3% which is quite underwhelming.
+The above graph shows the percentage of explained variance by dimension.
+As can be observed, the variance explained by 3 dimensions is only 49.3% which is quite underwhelming.
 
 ```{r}
 p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
@@ -1123,7 +1136,11 @@ p3 <- fviz_pca_biplot(songs_pca, axes = 5:6)
 grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ```
 
-6 dimensions do explain a bit more of the variance, but remain difficult to interpret. Some patterns do emerge. For example, Dimension 1 seems to be related to acousticness vs energy and loudness. On the other hand, Dimension 3 seems to be related with instrumentalness. Dimension 5 also seems to relate with mode. 
+6 dimensions do explain a bit more of the variance, but remain difficult to interpret.
+Some patterns do emerge.
+For example, Dimension 1 seems to be related to acousticness vs energy and loudness.
+On the other hand, Dimension 3 seems to be related with instrumentalness.
+Dimension 5 also seems to relate with mode.
 
 ```{r, message=FALSE}
 # 1. Prepare numeric data and keep release_year for color
@@ -1166,7 +1183,11 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
   ) +
   theme_minimal()
 ```
-Observing the relation with dimension 1 and 2 colored by release year, Dimension 1 displays the negative relation between acousticness and the positive interaction between energy and loudness. Adding release year information tells us that older tracks tend to be more acoustic, and less loud. This conclusion seems fitting, as older tracks before the appearance of electronic instruments would clearly tend to be more acoustic. Studies have shown that music has been getting louder with time.
+
+Observing the relation with dimension 1 and 2 colored by release year, Dimension 1 displays the negative relation between acousticness and the positive interaction between energy and loudness.
+Adding release year information tells us that older tracks tend to be more acoustic, and less loud.
+This conclusion seems fitting, as older tracks before the appearance of electronic instruments would clearly tend to be more acoustic.
+Studies have shown that music has been getting louder with time.
 
 In conclusion, while this PCA analysis struggles to truly reduce the number of variables needed, some interesting interactions can be observed such as the inverse relationship between acousticness and energy/loudness which point to an evolution in music styles through the years.
 
@@ -1180,11 +1201,16 @@ clustering_data <- dataset_clean %>%
   scale()
 ```
 
-A K-means clustering analysis was conducted using the R package *factoextra*. To perform this analysis, only numeric variables related to track features were selected: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time_signature**. These variables were chosen because they are metrics developed by Spotify, which does not disclose the exact methodologies behind their computation.
+A K-means clustering analysis was conducted using the R package *factoextra*.
+To perform this analysis, only numeric variables related to track features were selected: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time_signature**.
+These variables were chosen because they are metrics developed by Spotify, which does not disclose the exact methodologies behind their computation.
 
-It is speculated that Spotify may use some type of clustering technique to derive these features, potentially to better categorize musical genres and preferences. This makes clustering an appropriate method for exploring patterns within the dataset.
+It is speculated that Spotify may use some type of clustering technique to derive these features, potentially to better categorize musical genres and preferences.
+This makes clustering an appropriate method for exploring patterns within the dataset.
 
-The first step in the clustering process is to determine the optimal number of clusters. This was done using the Total Within-Cluster Sum of Squares (TWSS) as the evaluation metric. By identifying the elbow point in the TWSS curve, the appropriate number of clusters can be selected.
+The first step in the clustering process is to determine the optimal number of clusters.
+This was done using the Total Within-Cluster Sum of Squares (TWSS) as the evaluation metric.
+By identifying the elbow point in the TWSS curve, the appropriate number of clusters can be selected.
 
 ```{r}
 fviz_nbclust(clustering_data,
@@ -1414,6 +1440,12 @@ In subsequent studies, a deeper focus on this clustering technique could be cond
 
 # References
 
+Aguiar, L., & Waldfogel, J.
+(2018). 
+*Platforms, promotion, and product discovery: Evidence from Spotify playlists* (NBER Working Paper No. 24713).
+National Bureau of Economic Research. 
+https://www.nber.org/papers/w24713
+
 Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023).
 *Songs popularity analysis using Spotify data: An exploratory study*.
 In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223).
@@ -1424,6 +1456,10 @@ Choi, K., Fazekas, G., Sandler, M., & Cho, K.
 *Convolutional recurrent neural networks for music classification*.
 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2392–2396.
 https://doi.org/10.1109/ICASSP.2017.7952585
+
+Eriksson, M., Fleischer, R., Johansson, A., Snickars, P., & Vonderau, P. (2019). 
+*Spotify teardown: Inside the black box of streaming music*.
+MIT Press.
 
 Friberg, A., Erkut, C., & Bresin, R.
 (2011).
@@ -1439,6 +1475,16 @@ Herremans, D., Martens, D., & Sörensen, K.
 (2019).
 *Dance hit song prediction*.
 University of Antwerp Operations Research Group Applied Data Mining Research Group, University of Antwerp.
+
+Hesmondhalgh, D., Campos Valverde, R., Valdovinos Kaye, D. B., & Li, Z.
+(2023). 
+*The impact of algorithmically driven recommendation systems on music consumption and production: A literature review*.
+Centre for Data Ethics and Innovation.
+
+House of Commons Digital, Culture, Media and Sport Committee.
+(2021). 
+*Economics of music streaming: Second report of session 2021–22 (HC 50)*.
+UK Parliament.
 
 Interiano, M., Kazemi, K., Wang, L., Yang, J., & Komarova, N. L.
 (2018).
@@ -1480,6 +1526,11 @@ Schedl, M., Gómez, E., & Urbano, J.
 *Music information retrieval: Recent developments and applications*.
 Foundations and Trends in Information Retrieval, 8(2-3), 127–261.
 https://doi.org/10.1561/1500000042
+
+Seaver, N.
+(2022). 
+*Computing taste: Algorithms and the makers of music recommendation*.
+University of Chicago Press.
 
 Serrà, J., Corral, Á., Boguñá, M., Haro, M., & Arcos, J. L.
 (2012).
