@@ -15,7 +15,9 @@ format:
 editor: 
   markdown: 
     wrap: sentence
-abstract: |
+abstract: |This project explores how popular music has evolved over the past seventy years by analyzing 10,000 top-charting songs from the ARIA and Billboard rankings, covering the period from the 1950s to 2024. Using musical and metadata features provided by Spotify, the study applies both supervised and unsupervised machine learning techniques to understand the key characteristics that define different musical eras and to assess whether these features can predict when a song was released.
+Through models like Random Forests and Neural Networks, the research shows that it is possible to distinguish songs from different time periods with moderate accuracy, especially when grouping them into broader categories such as before or after 2007. A combined model using both audio data and album artwork yielded a prediction error of about 7.8 years on average. Clustering techniques and dimensionality reduction were also applied to uncover patterns and stylistic similarities across decades.
+The results highlight how musical features available through streaming platforms can reflect broader cultural and production trends. While predicting the exact release year of a song remains complex, this study demonstrates the value of machine learning as a tool for analyzing musical history and trends, offering useful insights for researchers, the music industry, and digital media platforms.
 ---
 
 ```{r setup, include=FALSE}
@@ -58,65 +60,39 @@ spotify <- read_csv("top_10000_1950-now.csv", show_col_types = FALSE)
 
 # Introduction
 
-The analysis of popular music through computational methods offers a unique lens into the cultural, technological, and artistic shifts that have defined society across decades.
-With the proliferation of digital streaming platforms and the availability of rich, structured audio datasets, the intersection of music and data science has emerged as a fertile ground for scholarly exploration.
-This study leverages machine learning techniques to analyze 10,000 top-charting songs from ARIA and Billboard rankings, spanning over seventy years, to investigate temporal patterns and predictive markers in musical composition.
+The analysis of popular music through computational methods offers a unique lens into the cultural, technological, and artistic shifts that have defined society across decades. With the proliferation of digital streaming platforms and the availability of rich, structured audio datasets, the intersection of music and data science has emerged as a fertile ground for scholarly exploration. This study leverages machine learning techniques to analyze 10,000 top-charting songs from ARIA and Billboard rankings, spanning over seventy years, to investigate temporal patterns and predictive markers in musical composition.
 
-Spotify, as the leading global music streaming platform, is not only a primary source of standardized audio and metadata features but also a pivotal player in shaping contemporary listening habits.
-Its API offers detailed descriptors such as tempo, danceability, energy, valence, and acousticness, which reflect both perceptual and technical properties of recorded music (Spotify for Developers, 2024).
-These features enable large-scale, reproducible analysis of musical trends across time.
-Beyond its role as a data provider, Spotify functions as an active cultural intermediary.
-Its proprietary popularity score—a dynamic measure influenced by recent streaming activity, user interactions, and playlist placements—does not merely reflect public interest but contributes to shaping it through algorithmic recommendations (Eriksson et al., 2019).
-This self-reinforcing feedback loop positions Spotify as a gatekeeper in the music industry, influencing not only what is heard but what is produced.
-As a result, understanding how musical features correlate with time-based patterns also provides insights into broader shifts driven by the platform economy.Spotify’s business model, centered on user engagement and advertising or subscription-based monetization, incentivizes behaviors that are increasingly mirrored in music production itself.
-Empirical studies have noted a trend toward shorter songs, quicker hooks, and higher replay value, aligned with Spotify’s payout structure that rewards full plays over partial ones (Aguiar et al., 2018).
-This suggests a convergence between data-informed curation algorithms and creative decisions in the studio, making it essential to consider both technological and economic contexts when analyzing musical evolution.
-Moreover, the inclusion of album artwork as a predictive input in this study reflects Spotify’s visual turn—where cover aesthetics influence playlist inclusion, click-through rates, and perceived genre alignment (Seaver, 2022).
-By incorporating both auditory and visual data, this project recognizes the multimodal nature of contemporary music consumption.
+Spotify, as the leading global music streaming platform, is not only a primary source of standardized audio and metadata features but also a pivotal player in shaping contemporary listening habits. Its API offers detailed descriptors such as tempo, danceability, energy, valence, and acousticness, which reflect both perceptual and technical properties of recorded music (Spotify for Developers, 2024). These features enable large-scale, reproducible analysis of musical trends across time. Beyond its role as a data provider, Spotify functions as an active cultural intermediary. Its proprietary popularity score—a dynamic measure influenced by recent streaming activity, user interactions, and playlist placements—does not merely reflect public interest but contributes to shaping it through algorithmic recommendations (Eriksson et al., 2019). This self-reinforcing feedback loop positions Spotify as a gatekeeper in the music industry, influencing not only what is heard but what is produced. As a result, understanding how musical features correlate with time-based patterns also provides insights into broader shifts driven by the platform economy.Spotify’s business model, centered on user engagement and advertising or subscription-based monetization, incentivizes behaviors that are increasingly mirrored in music production itself. Empirical studies have noted a trend toward shorter songs, quicker hooks, and higher replay value, aligned with Spotify’s payout structure that rewards full plays over partial ones (Aguiar et al., 2018). This suggests a convergence between data-informed curation algorithms and creative decisions in the studio, making it essential to consider both technological and economic contexts when analyzing musical evolution. Moreover, the inclusion of album artwork as a predictive input in this study reflects Spotify’s visual turn—where cover aesthetics influence playlist inclusion, click-through rates, and perceived genre alignment (Seaver, 2022). By incorporating both auditory and visual data, this project recognizes the multimodal nature of contemporary music consumption.
 
-Through a combination of supervised and unsupervised machine learning methods, this study not only examines the historical trajectory of popular music but also assesses the extent to which Spotify-derived features capture meaningful temporal signals.
-In doing so, it contributes to computational musicology while offering industry-relevant insights into how platform-mediated dynamics shape musical production, distribution, and reception in the digital age.
+Through a combination of supervised and unsupervised machine learning methods, this study not only examines the historical trajectory of popular music but also assesses the extent to which Spotify-derived features capture meaningful temporal signals. In doing so, it contributes to computational musicology while offering industry-relevant insights into how platform-mediated dynamics shape musical production, distribution, and reception in the digital age.
 
 # Literature review
 
 ## Music Analytics and Machine Learning
 
-The intersection of music and data science has increasingly attracted scholarly attention, particularly due to the rise of streaming platforms that provide large-scale, structured musical data.
-Several studies have explored the potential of audio and metadata features—such as those provided by Spotify—for understanding musical trends, classifying genres, and predicting popularity (Schedl et al., 2015).
-These features typically include danceability, energy, tempo, and valence, which encode perceptual and structural dimensions of sound and have been shown to correlate with human musical preferences (Friberg et al., 2011).
+The intersection of music and data science has increasingly attracted scholarly attention, particularly due to the rise of streaming platforms that provide large-scale, structured musical data. Several studies have explored the potential of audio and metadata features—such as those provided by Spotify—for understanding musical trends, classifying genres, and predicting popularity (Schedl et al., 2015). These features typically include danceability, energy, tempo, and valence, which encode perceptual and structural dimensions of sound and have been shown to correlate with human musical preferences (Friberg et al., 2011).
 
-Machine learning techniques have been applied extensively to music data for tasks such as mood classification, genre detection (Kim et al., 2010), and hit song prediction (Herremans et al., 2019).
-Supervised models, particularly random forests and support vector machines, have demonstrated robust performance in tasks involving feature-based classification and regression.
-More recent work has applied deep learning architectures to raw audio input, though these approaches often demand substantial computational resources and training data (Choi et al., 2017).
+Machine learning techniques have been applied extensively to music data for tasks such as mood classification, genre detection (Kim et al., 2010), and hit song prediction (Herremans et al., 2019). Supervised models, particularly random forests and support vector machines, have demonstrated robust performance in tasks involving feature-based classification and regression. More recent work has applied deep learning architectures to raw audio input, though these approaches often demand substantial computational resources and training data (Choi et al., 2017).
 
-Unsupervised learning, including clustering and dimensionality reduction techniques such as PCA, has also been used to explore latent patterns in musical corpora.
-For example, Jan Van Balen et al. (2015) used clustering to discover prototypical musical structures, while Serrà et al. (2012) applied PCA to uncover dominant stylistic trends over time.
+Unsupervised learning, including clustering and dimensionality reduction techniques such as PCA, has also been used to explore latent patterns in musical corpora. For example, Jan Van Balen et al. (2015) used clustering to discover prototypical musical structures, while Serrà et al. (2012) applied PCA to uncover dominant stylistic trends over time.
 
 ## Temporal Trends and Musical Evolution
 
-Temporal analyses have shown that the characteristics of popular music evolve in response to technological, cultural, and economic forces (Mauch et al., 2015).
-For instance, changes in average song duration have been linked to shifts in radio programming, physical formats (e.g., vinyl, CDs), and digital streaming incentives.
-The increasing prevalence of explicit lyrics has been attributed to looser content restrictions and changing cultural norms (Pachet, 2008).
+Temporal analyses have shown that the characteristics of popular music evolve in response to technological, cultural, and economic forces (Mauch et al., 2015). For instance, changes in average song duration have been linked to shifts in radio programming, physical formats (e.g., vinyl, CDs), and digital streaming incentives. The increasing prevalence of explicit lyrics has been attributed to looser content restrictions and changing cultural norms (Pachet, 2008).
 
-Empirical work by Interiano et al. (2018) used Spotify audio features to track the emotional content of popular music, observing a long-term trend toward increased sadness and decreased acousticness in top-charting songs.
-Similarly, it has been demonstrated that temporal audio descriptors could be used to model the release decade of songs with reasonable accuracy.
+Empirical work by Interiano et al. (2018) used Spotify audio features to track the emotional content of popular music, observing a long-term trend toward increased sadness and decreased acousticness in top-charting songs. Similarly, it has been demonstrated that temporal audio descriptors could be used to model the release decade of songs with reasonable accuracy.
 
 ## Challenges in Modeling Popularity and Period
 
-While popularity is a central variable in music analytics, its measurement remains opaque.
-Spotify’s proprietary popularity score is influenced by recent streaming activity, skips, and playlist placements, making it a dynamic and platform-specific metric (Spotify, 2023).
-Consequently, its use in predictive models must be interpreted as a temporal snapshot rather than a static attribute.
+While popularity is a central variable in music analytics, its measurement remains opaque. Spotify’s proprietary popularity score is influenced by recent streaming activity, skips, and playlist placements, making it a dynamic and platform-specific metric (Spotify, 2023). Consequently, its use in predictive models must be interpreted as a temporal snapshot rather than a static attribute.
 
-Predicting a song’s release year or period based on its acoustic profile poses challenges due to the high variability of musical styles within the same time frame and the enduring popularity of certain older songs.
-Nevertheless, several studies have demonstrated that audio features carry enough temporal signal to support classification tasks by decade or era, particularly when modeling broader stylistic shifts (Müller et al., 2010).
+Predicting a song’s release year or period based on its acoustic profile poses challenges due to the high variability of musical styles within the same time frame and the enduring popularity of certain older songs. Nevertheless, several studies have demonstrated that audio features carry enough temporal signal to support classification tasks by decade or era, particularly when modeling broader stylistic shifts (Müller et al., 2010).
 
 ## Contribution of the Present Study
 
-Building on this body of literature, the present study contributes a comprehensive analysis of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning more than seven decades.
-While prior work has focused either on genre classification or mood prediction, this study uniquely combines exploratory data analysis, unsupervised learning (e.g., PCA, clustering), and supervised modeling to assess both the temporal evolution of music and the predictive power of audio features.
+Building on this body of literature, the present study contributes a comprehensive analysis of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning more than seven decades. While prior work has focused either on genre classification or mood prediction, this study uniquely combines exploratory data analysis, unsupervised learning (e.g., PCA, clustering), and supervised modeling to assess both the temporal evolution of music and the predictive power of audio features.
 
-Moreover, by investigating the relationships between explicitness, duration, and popularity in a temporal context, this work highlights how platform incentives and listener behaviors have shaped recent musical trends.
-It also addresses gaps in the literature regarding the feasibility of using readily available Spotify features for temporal classification, and evaluates the limitations of clustering methods in capturing stylistic boundaries.
+Moreover, by investigating the relationships between explicitness, duration, and popularity in a temporal context, this work highlights how platform incentives and listener behaviors have shaped recent musical trends. It also addresses gaps in the literature regarding the feasibility of using readily available Spotify features for temporal classification, and evaluates the limitations of clustering methods in capturing stylistic boundaries.
 
 Finally, this study serves as a practical application of machine learning techniques in the music domain, offering insights for musicologists, data scientists, and digital media analysts interested in the computational modeling of cultural data.
 
@@ -124,15 +100,11 @@ Finally, this study serves as a practical application of machine learning techni
 
 ## Sources
 
-The dataset employed in this study, titled *“Top 10,000 Spotify Songs – ARIA and Billboard Charts”*, was obtained from Kaggle, a widely used platform for sharing datasets and data science resources.
-It comprises a curated collection of 10,000 tracks that have achieved significant popularity, based on historical rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts.
-This dual-source approach ensures a broad and balanced representation of commercially successful music across English-speaking markets.
+The dataset employed in this study, titled *“Top 10,000 Spotify Songs – ARIA and Billboard Charts”*, was obtained from Kaggle, a widely used platform for sharing datasets and data science resources. It comprises a curated collection of 10,000 tracks that have achieved significant popularity, based on historical rankings from both the ARIA (Australian Recording Industry Association) and Billboard charts. This dual-source approach ensures a broad and balanced representation of commercially successful music across English-speaking markets.
 
-The dataset spans a temporal range from the 1950s to 2024, capturing the dynamic evolution of popular music over more than seven decades.
-It includes metadata and audio-based features extracted via the Spotify API, such as tempo, energy, danceability, valence, and instrumentalness, which allow for detailed computational analysis.
+The dataset spans a temporal range from the 1950s to 2024, capturing the dynamic evolution of popular music over more than seven decades. It includes metadata and audio-based features extracted via the Spotify API, such as tempo, energy, danceability, valence, and instrumentalness, which allow for detailed computational analysis.
 
-In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences.
-As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
+In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences. As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
 
 ## Description
 
@@ -143,7 +115,7 @@ As such, it provides a robust foundation for both exploratory data analysis and 
 The dataset comprises 10,000 entries and 35 variables, encompassing information related to song popularity, artist identity, release date, and various musical attributes.
 
 | Variable | Description | Category | Example |
-|----------------|-------------------------|----------------|----------------|
+|-----------------|-----------------------|-----------------|-----------------|
 | track_uri | Unique identifier for the track | character | spotify:track:123... |
 | track_name | Name of the track | character | Bohemian Rhapsody |
 | artist_uris | URIs of artists performing the track | character | spotify:artist:abc... |
@@ -182,9 +154,7 @@ The dataset comprises 10,000 entries and 35 variables, encompassing information 
 
 ## Wrangling / Cleaning
 
-In preparation for analysis, the original dataset was cleaned and standardized by renaming variables to follow consistent, machine-readable naming conventions.
-Redundant or non-essential columns—such as URIs, preview links, and metadata unrelated to audio features—were subsequently removed.
-The resulting dataset *spotify_vr* retains only the relevant musical, temporal, and popularity-related attributes needed for the subsequent exploratory and predictive modeling tasks.
+In preparation for analysis, the original dataset was cleaned and standardized by renaming variables to follow consistent, machine-readable naming conventions. Redundant or non-essential columns—such as URIs, preview links, and metadata unrelated to audio features—were subsequently removed. The resulting dataset *spotify_vr* retains only the relevant musical, temporal, and popularity-related attributes needed for the subsequent exploratory and predictive modeling tasks.
 
 ```{r}
 #| echo: false
@@ -255,16 +225,9 @@ spotify_vr <- spotify_vr |>
 
 ## Image Data
 
-In order to enhance the predictions, album covers were selected to be added as input in the neural network model.
-The orginal dataset uses a link provided by spotify to retrieve each image.
+In order to enhance the predictions, album covers were selected to be added as input in the neural network model. The orginal dataset uses a link provided by spotify to retrieve each image.
 
-All images are retrieved from their respective links, resized to be 64x64 pixels.
-The size was chosen to balance concerns of space and usefulness.
-Indeed, a 16x16 pixel image would provide hardly any useful information.
-On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store.
-All images are then saved locally, with their Spotify Song ID as a filename.
-This process was performed in parallel using multi-treading.
-This enables a much faster processing time.
+All images are retrieved from their respective links, resized to be 64x64 pixels. The size was chosen to balance concerns of space and usefulness. Indeed, a 16x16 pixel image would provide hardly any useful information. On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store. All images are then saved locally, with their Spotify Song ID as a filename. This process was performed in parallel using multi-treading. This enables a much faster processing time.
 
 Image examples can be seen below:
 
@@ -272,11 +235,9 @@ Image examples can be seen below:
 
 ## Spotting Mistakes and Missing Data
 
-The procedure involves identifying and counting missing values in the dataset, detecting rows containing incomplete information, and removing those with missing or empty loudness values.
-Then, the release year is extracted from the release date and converted to a numeric format, producing a cleaned dataset ready for further analysis.
+The procedure involves identifying and counting missing values in the dataset, detecting rows containing incomplete information, and removing those with missing or empty loudness values. Then, the release year is extracted from the release date and converted to a numeric format, producing a cleaned dataset ready for further analysis.
 
-The dataset have a total of 625 missing values before cleaning.
-After cleaning we still have 547 missing values, all of them concern the *artist_genres*.
+The dataset have a total of 625 missing values before cleaning. After cleaning we still have 547 missing values, all of them concern the *artist_genres*.
 
 ```{r}
 dataset_clean <- spotify_vr |>
@@ -298,13 +259,11 @@ colSums(is.na(dataset_clean)) |>
   )
 ```
 
-The dataset contains a total of 625 missing values, of which 551 correspond to the *artist_genres* variable.
-Instances with missing values in variables related to musical characteristics are excluded from the analysis to ensure data quality and consistency.
+The dataset contains a total of 625 missing values, of which 551 correspond to the *artist_genres* variable. Instances with missing values in variables related to musical characteristics are excluded from the analysis to ensure data quality and consistency.
 
 ## Listing Anomalies and Outliers
 
-A subset of the dataset containing only numeric variables was selected, excluding *mode* and *time_signature*.
-The data was then transformed into long format to generate faceted boxplots, allowing for the visualization of the distribution and scale of each numeric variable individually.
+A subset of the dataset containing only numeric variables was selected, excluding *mode* and *time_signature*. The data was then transformed into long format to generate faceted boxplots, allowing for the visualization of the distribution and scale of each numeric variable individually.
 
 ```{r}
 numeric_data <- dataset_clean %>% select(where(is.numeric)) |>
@@ -322,16 +281,11 @@ ggplot(long_data, aes(x = "", y = Value)) +
 
 ### Interpretation
 
-The faceted boxplots illustrate the distribution of key numeric features.
-Variables such as acousticness, energy, danceability, instrumentalness, liveness, valence, and speechiness are bounded between 0 and 1.
-Most exhibit distributions concentrated near zero, particularly instrumentalness and speechiness, which show long right tails and outliers close to 1, suggesting that while the average track lacks strong instrumental or spoken elements, some are highly characterized by them.
+The faceted boxplots illustrate the distribution of key numeric features. Variables such as acousticness, energy, danceability, instrumentalness, liveness, valence, and speechiness are bounded between 0 and 1. Most exhibit distributions concentrated near zero, particularly instrumentalness and speechiness, which show long right tails and outliers close to 1, suggesting that while the average track lacks strong instrumental or spoken elements, some are highly characterized by them.
 
-Duration (in milliseconds) is slightly right-skewed, with most tracks clustered around the median and a few outliers representing exceptionally long songs.
-Loudness is centered around negative values, consistent with its decibel scale relative to silence, and shows a compact distribution with occasional extreme lows, likely corresponding to quiet or highly dynamic tracks.
+Duration (in milliseconds) is slightly right-skewed, with most tracks clustered around the median and a few outliers representing exceptionally long songs. Loudness is centered around negative values, consistent with its decibel scale relative to silence, and shows a compact distribution with occasional extreme lows, likely corresponding to quiet or highly dynamic tracks.
 
-Popularity displays a broad distribution with outliers at both ends, indicating notable variability in audience reception.
-Tempo shows high variance and several extreme values, potentially due to anomalous entries or experimental compositions.
-Lastly, track number is typically low—reflecting songs positioned early in albums—though outliers suggest the presence of long compilations or inconsistent metadata.
+Popularity displays a broad distribution with outliers at both ends, indicating notable variability in audience reception. Tempo shows high variance and several extreme values, potentially due to anomalous entries or experimental compositions. Lastly, track number is typically low—reflecting songs positioned early in albums—though outliers suggest the presence of long compilations or inconsistent metadata.
 
 ## Summary statistics
 
@@ -349,38 +303,23 @@ dataset_clean %>%
 
 The summary statistics table provides an overview of the central tendencies and dispersion of key variables in the dataset.
 
-As we can see, regarding the release date, most songs have been released in more recent years.
-this may lead to unbalanced data.
-Ways to solve this unbalance will be discussed later in this paper.
-Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation.
-interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
+As we can see, regarding the release date, most songs have been released in more recent years. this may lead to unbalanced data. Ways to solve this unbalance will be discussed later in this paper. Regarding the track number in the song, the mean being at *4.9*, this tells us that most songs may part of an album or compilation. interestingly, the max of song number is *93* for a song named *Soul Revival* by *Johnny Diesel & The Injectors* part of a *Complete Eighties* compilation of 100 songs from the 80s.
 
-The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes.
-for *Tubular Bells - Pt. I* by *Mike Oldfield*.
-While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)*.
+The track duration is expressed in milliseconds, with a mean of *3 minutes and 44 seconds.* The longest song in record is a whopping 26 minutes. for *Tubular Bells - Pt. I* by *Mike Oldfield*. While this may not ring a bell (pun intended) for most readers, Amateurs of Horror may recognize this as the opening soundtrack for *The Exorcist (1973)*.
 
-The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit.
-The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range.
-Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
+The is_explicit variable is highly imbalanced, with approximately 95% of the songs labeled as non-explicit. The distribution of the popularity variable is not normally distributed, with a mean value of 33, indicating that most songs fall within a lower popularity range. Variables such as danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time signature are audio features provided by Spotify that describe various musical characteristics of each track.
 
 ## Correlation Matrix
 
 # Exploratory Data Analysis
 
-To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted.
-This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables.
-We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity.
-Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre.
-This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
+To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted. This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables. We begin with summary statistics and visual inspections of key numeric features, followed by the analysis of correlations and potential multicollinearity. Subsequently, we investigate temporal trends, track characteristics, and the distribution of categorical variables such as explicit content and genre. This stepwise exploration helps identify data quality issues, potential outliers, and underlying trends that may influence or inform the subsequent application of machine learning techniques.
 
 ## Correlation matrix
 
-A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset.
-This helps reveal patterns of association and potential multicollinearity between audio features.
+A correlation matrix is computed and visualized using a color-coded upper-triangle plot to identify linear relationships among the numeric variables in the cleaned dataset. This helps reveal patterns of association and potential multicollinearity between audio features.
 
-The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder.
-A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels.
-Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
+The correlation matrix reveals a moderate positive association between energy and loudness, suggesting that more energetic tracks tend to be louder. A notable negative correlation is observed between acousticness and energy, indicating that acoustic songs generally exhibit lower energy levels. Overall, the absence of strong correlations among most variables suggests low multicollinearity, supporting their joint inclusion in multivariate analyses.
 
 ```{r}
 #start by selecting numeric columns
@@ -423,8 +362,7 @@ year_hist <- dataset_clean %>%
 year_hist
 ```
 
-Release year is the dependent variable in this analysis, and it is considered at the level of yearly granularity.
-The histogram shows a strong concentration of songs in more recent years, indicating a temporal imbalance that may affect the representativeness of earlier decades in the modeling phase.
+Release year is the dependent variable in this analysis, and it is considered at the level of yearly granularity. The histogram shows a strong concentration of songs in more recent years, indicating a temporal imbalance that may affect the representativeness of earlier decades in the modeling phase.
 
 ### Track numbers
 
@@ -477,11 +415,7 @@ benford
 
 ```
 
-The distribution of the first digit in track numbers clearly deviates from the expected pattern described by Benford’s Law.
-This discrepancy is likely due to structural constraints in how music albums are organized.
-Most releases—such as singles, EPs, and standard albums—contain a relatively small and fixed number of tracks, typically ranging from 1 to 15.
-As a result, lower digits, particularly 1, dominate the distribution, not because of a naturally logarithmic phenomenon but due to intentional sequencing and formatting practices in album production.
-This illustrates how domain-specific conventions can override general statistical laws in structured datasets.
+The distribution of the first digit in track numbers clearly deviates from the expected pattern described by Benford’s Law. This discrepancy is likely due to structural constraints in how music albums are organized. Most releases—such as singles, EPs, and standard albums—contain a relatively small and fixed number of tracks, typically ranging from 1 to 15. As a result, lower digits, particularly 1, dominate the distribution, not because of a naturally logarithmic phenomenon but due to intentional sequencing and formatting practices in album production. This illustrates how domain-specific conventions can override general statistical laws in structured datasets.
 
 Lastly, the evolution of track numbers over time can be examined to assess whether album structure or track positioning has changed across decades, potentially reflecting shifts in music consumption formats or production practices.
 
@@ -496,8 +430,7 @@ year_tracknum <- dataset_clean %>%
 year_tracknum
 ```
 
-The scatter plot shows no clear trend in the evolution of track numbers over time.
-While the majority of songs consistently appear in early album positions across decades, some outliers—particularly in more recent years—exceed typical album lengths, likely reflecting special editions, compilations, or digital releases with extended tracklists.
+The scatter plot shows no clear trend in the evolution of track numbers over time. While the majority of songs consistently appear in early album positions across decades, some outliers—particularly in more recent years—exceed typical album lengths, likely reflecting special editions, compilations, or digital releases with extended tracklists.
 
 ### Track Duration
 
@@ -516,8 +449,7 @@ duration_hist
 
 The histogram shows that the distribution of track durations is right-skewed, with most songs clustered around typical lengths and a limited number of extreme values representing unusually long tracks.
 
-A line plot is used to visualize the evolution of median track duration over time.
-This allows identification of long-term trends, such as shifts in typical song lengths across decades, and highlights notable changes in production or consumption patterns.
+A line plot is used to visualize the evolution of median track duration over time. This allows identification of long-term trends, such as shifts in typical song lengths across decades, and highlights notable changes in production or consumption patterns.
 
 ```{r}
 median_year <- dataset_clean %>% 
@@ -532,9 +464,7 @@ median_year <- dataset_clean %>%
 median_year
 ```
 
-The plot shows that median track duration increased steadily throughout the second half of the 20th century, reaching a peak in 1992 at approximately 260 seconds (4 minutes and 20 seconds).
-A gradual decline follows, particularly from the 2010s onward.
-This recent downward trend is likely influenced by changes in digital consumption patterns, where streaming platforms incentivize shorter songs due to skip behavior and payout structures based on play counts.
+The plot shows that median track duration increased steadily throughout the second half of the 20th century, reaching a peak in 1992 at approximately 260 seconds (4 minutes and 20 seconds). A gradual decline follows, particularly from the 2010s onward. This recent downward trend is likely influenced by changes in digital consumption patterns, where streaming platforms incentivize shorter songs due to skip behavior and payout structures based on play counts.
 
 ```{r}
 duration_pop <- dataset_clean %>% 
@@ -577,8 +507,7 @@ explicit_year <- dataset_clean %>%
 explicit_year
 ```
 
-The analysis reveals a clear upward trend in the share of explicit songs over time, with a marked increase beginning in the early 2000s.
-This suggests a shift in lyrical content or labeling practices in the streaming era, where explicit content has become more common in popular music releases.
+The analysis reveals a clear upward trend in the share of explicit songs over time, with a marked increase beginning in the early 2000s. This suggests a shift in lyrical content or labeling practices in the streaming era, where explicit content has become more common in popular music releases.
 
 A line plot is now used to visualize the annual count of explicit songs over time, offering a more detailed view of their increasing presence in recent decades.
 
@@ -602,9 +531,7 @@ line_explicit <- dataset_clean %>%
 line_explicit
 ```
 
-The line plot confirms a rising trend in the number of explicit songs over time, particularly from the early 2000s onward.
-However, this pattern should be interpreted cautiously, as the explicit label is assigned by content uploaders and may not consistently reflect the presence of explicit material.
-In some cases, tracks with potentially explicit content are also released in censored versions to ensure broader distribution, such as radio play.
+The line plot confirms a rising trend in the number of explicit songs over time, particularly from the early 2000s onward. However, this pattern should be interpreted cautiously, as the explicit label is assigned by content uploaders and may not consistently reflect the presence of explicit material. In some cases, tracks with potentially explicit content are also released in censored versions to ensure broader distribution, such as radio play.
 
 A boxplot is used to compare the distribution of song popularity between explicit and non-explicit tracks, allowing for the assessment of whether explicit content is associated with higher or lower popularity levels.
 
@@ -622,8 +549,7 @@ explicit_boxplot <- dataset_clean %>%
 explicit_boxplot
 ```
 
-To further explore the relationship between explicit content and popularity, a scatter plot is used to visualize popularity scores over time, differentiated by explicit status.
-This approach helps assess whether the observed higher popularity of explicit songs is inherently tied to their content or instead influenced by temporal release patterns.
+To further explore the relationship between explicit content and popularity, a scatter plot is used to visualize popularity scores over time, differentiated by explicit status. This approach helps assess whether the observed higher popularity of explicit songs is inherently tied to their content or instead influenced by temporal release patterns.
 
 ```{r}
 explicit_popdate <- dataset_clean %>% 
@@ -644,13 +570,11 @@ explicit_popdate <- dataset_clean %>%
 explicit_popdate
 ```
 
-The scatter plot reveals that explicit songs (in red) are predominantly concentrated in more recent years and often exhibit high popularity scores.
-This supports the hypothesis that the observed popularity advantage of explicit tracks may be confounded by release date, as newer songs are both more likely to be explicit and to benefit from recency effects in popularity metrics.
+The scatter plot reveals that explicit songs (in red) are predominantly concentrated in more recent years and often exhibit high popularity scores. This supports the hypothesis that the observed popularity advantage of explicit tracks may be confounded by release date, as newer songs are both more likely to be explicit and to benefit from recency effects in popularity metrics.
 
 ### Popularity
 
-Popularity serves as a valuable proxy for a song’s commercial success and audience reach.
-While the exact algorithm used to calculate Spotify’s popularity score is not publicly disclosed, it is reasonable to assume that it reflects streaming frequency over a defined recent time window.
+Popularity serves as a valuable proxy for a song’s commercial success and audience reach. While the exact algorithm used to calculate Spotify’s popularity score is not publicly disclosed, it is reasonable to assume that it reflects streaming frequency over a defined recent time window.
 
 ```{r}
 # Summary statistics for key numeric features
@@ -664,8 +588,7 @@ dataset_clean %>%
 
 ```
 
-It is important to note that the dataset was last updated in October 2024, meaning that the popularity scores reflect a specific point in time and may have since changed.
-However, this temporal limitation does not affect the validity of the present analysis, as the values still offer a reliable snapshot for exploring general trends and patterns in music popularity.
+It is important to note that the dataset was last updated in October 2024, meaning that the popularity scores reflect a specific point in time and may have since changed. However, this temporal limitation does not affect the validity of the present analysis, as the values still offer a reliable snapshot for exploring general trends and patterns in music popularity.
 
 ```{r}
 avg_pop_date <- dataset_clean %>% 
@@ -679,15 +602,11 @@ avg_pop_date <- dataset_clean %>%
 avg_pop_date
 ```
 
-The chart shows peaks in popularity for early and recent songs.
-While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising.
-A possible explanation is that artists featured in rankings and playlists remain culturally significant.
-Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
+The chart shows peaks in popularity for early and recent songs. While the high popularity of recent songs is to be expected, the elevated scores for tracks from the 1960s are more surprising. A possible explanation is that artists featured in rankings and playlists remain culturally significant. Artists such as Frank Sinatra, Elvis Presley or Johnny Cash have become timeless icons that continue to be cultural relevant and popular across generations.
 
 ## Textual analysis
 
-This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks.
-The goal is to identify the top 20 most frequently appearing artists in the dataset.
+This section performs a basic text mining task by extracting and counting individual artist names from multi-artist tracks. The goal is to identify the top 20 most frequently appearing artists in the dataset.
 
 ```{r}
 # Separate multiple artists
@@ -730,8 +649,7 @@ artist_pop <- dataset_clean %>%
 artist_pop
 ```
 
-The following analysis ranks artists by their average track duration, highlighting those associated with longer musical compositions.
-Such patterns may reflect stylistic tendencies common in certain genres, including progressive rock, ambient, or experimental music.
+The following analysis ranks artists by their average track duration, highlighting those associated with longer musical compositions. Such patterns may reflect stylistic tendencies common in certain genres, including progressive rock, ambient, or experimental music.
 
 ```{r}
 artist_len <- dataset_clean %>%
@@ -818,49 +736,35 @@ genre_pop
 
 # Machine Learning Methods
 
-In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods.
-Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
+In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods. Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
 
 ### Supervised Learning Methods
 
-Supervised learning involves building models that learn from labeled data, where the outcome variable (in our case, the song's year) is known.
-The goal is to find a function that best predicts this outcome from a set of features.
+Supervised learning involves building models that learn from labeled data, where the outcome variable (in our case, the song's year) is known. The goal is to find a function that best predicts this outcome from a set of features.
 
 #### Random Forest
 
-Random Forest (RF) is an ensemble learning method that builds a large number of decision trees during training and outputs either the mode (for classification) or the mean (for regression) of the individual tree predictions.
-It combines two key ideas: bagging (training trees on bootstrapped samples of the data) and random feature selection at each split, which helps reduce variance and improve model generalization.
-In this context, RF will be used to predict the release year of a song as a regression task, leveraging its robustness to overfitting and capacity to handle complex interactions between features.
+Random Forest (RF) is an ensemble learning method that builds a large number of decision trees during training and outputs either the mode (for classification) or the mean (for regression) of the individual tree predictions. It combines two key ideas: bagging (training trees on bootstrapped samples of the data) and random feature selection at each split, which helps reduce variance and improve model generalization. In this context, RF will be used to predict the release year of a song as a regression task, leveraging its robustness to overfitting and capacity to handle complex interactions between features.
 
 #### Neural Networks
 
-Artificial Neural Networks (NN) are flexible, layered models composed of nodes (neurons) that compute weighted sums of inputs and apply non-linear activation functions.
-They are particularly effective for capturing complex, non-linear relationships in data.
-In our study, we use NNs with one or more hidden layers to model the relationship between musical features and the year of release, treating this as a regression problem.
-The model is trained using gradient descent to minimize a loss function, typically the mean squared error (MSE).
+Artificial Neural Networks (NN) are flexible, layered models composed of nodes (neurons) that compute weighted sums of inputs and apply non-linear activation functions. They are particularly effective for capturing complex, non-linear relationships in data. In our study, we use NNs with one or more hidden layers to model the relationship between musical features and the year of release, treating this as a regression problem. The model is trained using gradient descent to minimize a loss function, typically the mean squared error (MSE).
 
 ### Unsupervised Learning Methods
 
-Unsupervised learning does not use labeled data but instead focuses on uncovering hidden structures within the data.
-This can be particularly useful in exploratory phases to detect patterns and validate assumptions about the features.
+Unsupervised learning does not use labeled data but instead focuses on uncovering hidden structures within the data. This can be particularly useful in exploratory phases to detect patterns and validate assumptions about the features.
 
 #### K-means Clustering
 
-K-means is a partitioning method that groups data into a predefined number of clusters (k) by minimizing the within-cluster sum of squares.
-The algorithm iteratively assigns each instance to the nearest cluster centroid and updates the centroids until convergence.
-In our analysis, K-means is used to examine whether natural groupings exist among songs based on their musical attributes, potentially revealing eras or genres that influence the release year.
+K-means is a partitioning method that groups data into a predefined number of clusters (k) by minimizing the within-cluster sum of squares. The algorithm iteratively assigns each instance to the nearest cluster centroid and updates the centroids until convergence. In our analysis, K-means is used to examine whether natural groupings exist among songs based on their musical attributes, potentially revealing eras or genres that influence the release year.
 
 #### Principal Component Analysis (PCA)
 
-PCA is a dimensionality reduction technique that transforms the original features into a smaller number of uncorrelated components that retain most of the data variance.
-In this study, PCA is used to reduce the high-dimensional musical feature space into a more manageable form for visualization and clustering.
-Additionally, PCA components may be used as inputs to supervised models to mitigate multicollinearity and improve performance.
+PCA is a dimensionality reduction technique that transforms the original features into a smaller number of uncorrelated components that retain most of the data variance. In this study, PCA is used to reduce the high-dimensional musical feature space into a more manageable form for visualization and clustering. Additionally, PCA components may be used as inputs to supervised models to mitigate multicollinearity and improve performance.
 
 #### Hierarchical Clustering
 
-Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points.
-We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step.
-This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
+Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points. We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step. This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
 
 # Results
 
@@ -868,8 +772,7 @@ This method helps visualize relationships between songs and investigate whether 
 
 ### Random Forest with undersampling
 
-For the first supervised model, we implemented a Random Forest classifier to predict the decade of release for each song.
-To address the issue of unbalanced classes, we grouped songs from the 1950s and 1960s into a single category and applied the under-sampling technique, resulting in balanced groups of 470 songs per decade.
+For the first supervised model, we implemented a Random Forest classifier to predict the decade of release for each song. To address the issue of unbalanced classes, we grouped songs from the 1950s and 1960s into a single category and applied the under-sampling technique, resulting in balanced groups of 470 songs per decade.
 
 ```{r}
 #| echo: false
@@ -964,14 +867,9 @@ ggplot(cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
 
 ```
 
-The Random Forest model achieved an accuracy of 41.0%.
-The Cohen’s Kappa was 0.312, reflecting only fair agreement beyond chance, and highlighting limitations in distinguishing between decades.
-However, the result is statistically significant (p \< 2e−16), confirming that the model performed better than random guessing.
+The Random Forest model achieved an accuracy of 41.0%. The Cohen’s Kappa was 0.312, reflecting only fair agreement beyond chance, and highlighting limitations in distinguishing between decades. However, the result is statistically significant (p \< 2e−16), confirming that the model performed better than random guessing.
 
-An analysis of the model’s sensitivity and specificity revealed that it performs best in identifying songs from the 1950–1960 and 2020 periods, with sensitivities of 72.8% and 51.3% respectively.
-These decades likely exhibit the most distinct musical traits.
-In contrast, the model struggled with songs from the 1990s and 2000s, which had the lowest sensitivities (21.6% and 29.1%), possibly due to stylistic continuity across adjacent decades.
-Specificity, however, remained high across all decades, with values above 86% and peaking at 94.2% for the 2020 class.
+An analysis of the model’s sensitivity and specificity revealed that it performs best in identifying songs from the 1950–1960 and 2020 periods, with sensitivities of 72.8% and 51.3% respectively. These decades likely exhibit the most distinct musical traits. In contrast, the model struggled with songs from the 1990s and 2000s, which had the lowest sensitivities (21.6% and 29.1%), possibly due to stylistic continuity across adjacent decades. Specificity, however, remained high across all decades, with values above 86% and peaking at 94.2% for the 2020 class.
 
 ```{r}
 
@@ -985,14 +883,11 @@ rpart.plot(tree_model,
            main = "Decision Tree")
 ```
 
-The decision tree from the Random Forest revealed that features such as duration_ms, loudness, and danceability were crucial for classifying songs by decade.
-Older songs (1950–1960) clustered around lower loudness and shorter durations, while modern songs (post-2000) displayed higher loudness and more variability in mood (valence).
-The decision paths reflect a gradual stylistic evolution, supporting the hypothesis that production and mastering techniques, as well as compositional trends, shift over time.
+The decision tree from the Random Forest revealed that features such as duration_ms, loudness, and danceability were crucial for classifying songs by decade. Older songs (1950–1960) clustered around lower loudness and shorter durations, while modern songs (post-2000) displayed higher loudness and more variability in mood (valence). The decision paths reflect a gradual stylistic evolution, supporting the hypothesis that production and mastering techniques, as well as compositional trends, shift over time.
 
 ### Random Forest on median year
 
-To improve predictive performance, we reformulated the problem as a binary classification task, aiming to predict whether a song was released before or after 2007, the median year in the dataset.
-This simplification helped the model focus on broader stylistic trends across time rather than granular decade differences.
+To improve predictive performance, we reformulated the problem as a binary classification task, aiming to predict whether a song was released before or after 2007, the median year in the dataset. This simplification helped the model focus on broader stylistic trends across time rather than granular decade differences.
 
 ```{r}
 #| echo: false
@@ -1042,9 +937,7 @@ library(caret)
 confusionMatrix(pred, test$after_median)
 ```
 
-The Random Forest model achieved an accuracy of 75.3%, with a balanced accuracy of 75.2% and a Cohen’s Kappa of 0.504, indicating moderate agreement beyond chance.
-It performed well across both classes, with a sensitivity of 70.7% (correctly identifying post-2007 songs) and a specificity of 79.5% (correctly identifying pre-2007 songs).
-The model’s performance was statistically significant (p \< 2.2e−16).
+The Random Forest model achieved an accuracy of 75.3%, with a balanced accuracy of 75.2% and a Cohen’s Kappa of 0.504, indicating moderate agreement beyond chance. It performed well across both classes, with a sensitivity of 70.7% (correctly identifying post-2007 songs) and a specificity of 79.5% (correctly identifying pre-2007 songs). The model’s performance was statistically significant (p \< 2.2e−16).
 
 ```{r}
 tree_model <- rpart(after_median ~ ., data = train, method = "class")
@@ -1057,27 +950,21 @@ rpart.plot(tree_model,
            main = "Decision Tree")
 ```
 
-The decision tree revealed that features such as loudness, valence, and duration_ms were crucial for distinguishing songs released before and after 2007.
-Songs released before 2007 tended to have lower loudness levels and lower valence, reflecting older production techniques and more subdued emotional tones.
-In contrast, post-2007 songs were often characterized by shorter durations, higher valence, and greater variation in energy, aligning with modern trends in pop music shaped by the digital and streaming era.
+The decision tree revealed that features such as loudness, valence, and duration_ms were crucial for distinguishing songs released before and after 2007. Songs released before 2007 tended to have lower loudness levels and lower valence, reflecting older production techniques and more subdued emotional tones. In contrast, post-2007 songs were often characterized by shorter durations, higher valence, and greater variation in energy, aligning with modern trends in pop music shaped by the digital and streaming era.
 
 ### Neural Networks
 
-While Random Forest models showed satisfying results when it came to classification of track decades, attempts involving regression tasks to predict the year saw issues.
-It was therefore decided to attempt to fit a neural network to predict the release year using tabular data as well as album covers.
+While Random Forest models showed satisfying results when it came to classification of track decades, attempts involving regression tasks to predict the year saw issues. It was therefore decided to attempt to fit a neural network to predict the release year using tabular data as well as album covers.
 
 #### Model Building
 
 The model was built and fitted using python and the **Keras** library, allowing to easily build neural networks.
 
-The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN.
-the layers were then merged.
-into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
+The decision was made to train both inputs, the image data in a CNN and the tabular data in a DNN. the layers were then merged. into one hidden layer thereby taking in all the information from both layers and finally making a prediction.
 
 The model summary can be seen below: ![Neural network Summary](../figures/Concat_model_spot.png)
 
-To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years.
-The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
+To build the model, the release year was normalized, Therefore enabling predictions bounded between 1955 and 2024, the minimum and maximum release years. The final output layer uses a sigmoid function, making sure that forecasts are always bounded and that the model will not predict impossible years such as 2026 for example.
 
 The model was trained with 20 epochs and a batch size of 32 returned the following metrics:
 
@@ -1087,22 +974,15 @@ The model was trained with 20 epochs and a batch size of 32 returned the followi
 
 **Test R² score: 0.4539**
 
-These results show no sign of overfitting, regarding the metrics themselves, one should keep in mind that these metrics are for normalized years.
-Therefore, a mean absolute error of 0.1139 over the 69(2024-1955) years of study means that the model is on average off by 7.8 years.
-The R-squared score shows that while the model may capture some of the variance, a big part is due to other factors.
+These results show no sign of overfitting, regarding the metrics themselves, one should keep in mind that these metrics are for normalized years. Therefore, a mean absolute error of 0.1139 over the 69(2024-1955) years of study means that the model is on average off by 7.8 years. The R-squared score shows that while the model may capture some of the variance, a big part is due to other factors.
 
 ### Conclusion
 
-To conclude on supervised learning, the random forest models show that musical features hold some predictive value for estimating a song’s release period, though with limitations.
-In the multi-class model, predicting the exact decade proved challenging, with overlapping styles between adjacent decades affecting accuracy.
-Nonetheless, features like loudness, valence, and danceability captured broad production trends over time.
+To conclude on supervised learning, the random forest models show that musical features hold some predictive value for estimating a song’s release period, though with limitations. In the multi-class model, predicting the exact decade proved challenging, with overlapping styles between adjacent decades affecting accuracy. Nonetheless, features like loudness, valence, and danceability captured broad production trends over time.
 
-The binary classification model, distinguishing songs released before or after 2007, performed considerably better.
-This suggests that while musical features may not pinpoint exact release dates, they are effective in capturing wider historical shifts in music production and composition.
+The binary classification model, distinguishing songs released before or after 2007, performed considerably better. This suggests that while musical features may not pinpoint exact release dates, they are effective in capturing wider historical shifts in music production and composition.
 
-finally, the neural network model leveraging both album cover images and tabular data showed no signs of overfitting, its performance remained moderate.
-The average prediction error of approximately 7.8 years suggests that musical features and visual aesthetics alone are not sufficient to precisely predict a song’s release year.
-Nonetheless, the model does capture some temporal patterns, indicating potential when combined with richer contextual data.
+finally, the neural network model leveraging both album cover images and tabular data showed no signs of overfitting, its performance remained moderate. The average prediction error of approximately 7.8 years suggests that musical features and visual aesthetics alone are not sufficient to precisely predict a song’s release year. Nonetheless, the model does capture some temporal patterns, indicating potential when combined with richer contextual data.
 
 ## Unsupervised Learning
 
@@ -1126,8 +1006,7 @@ songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
 fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
 ```
 
-The above graph shows the percentage of explained variance by dimension.
-As can be observed, the variance explained by 3 dimensions is only 49.3% which is quite underwhelming.
+The above graph shows the percentage of explained variance by dimension. As can be observed, the variance explained by 3 dimensions is only 49.3% which is quite underwhelming.
 
 ```{r}
 p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
@@ -1136,11 +1015,7 @@ p3 <- fviz_pca_biplot(songs_pca, axes = 5:6)
 grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
 ```
 
-6 dimensions do explain a bit more of the variance, but remain difficult to interpret.
-Some patterns do emerge.
-For example, Dimension 1 seems to be related to acousticness vs energy and loudness.
-On the other hand, Dimension 3 seems to be related with instrumentalness.
-Dimension 5 also seems to relate with mode.
+6 dimensions do explain a bit more of the variance, but remain difficult to interpret. Some patterns do emerge. For example, Dimension 1 seems to be related to acousticness vs energy and loudness. On the other hand, Dimension 3 seems to be related with instrumentalness. Dimension 5 also seems to relate with mode.
 
 ```{r, message=FALSE}
 # 1. Prepare numeric data and keep release_year for color
@@ -1184,10 +1059,7 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
   theme_minimal()
 ```
 
-Observing the relation with dimension 1 and 2 colored by release year, Dimension 1 displays the negative relation between acousticness and the positive interaction between energy and loudness.
-Adding release year information tells us that older tracks tend to be more acoustic, and less loud.
-This conclusion seems fitting, as older tracks before the appearance of electronic instruments would clearly tend to be more acoustic.
-Studies have shown that music has been getting louder with time.
+Observing the relation with dimension 1 and 2 colored by release year, Dimension 1 displays the negative relation between acousticness and the positive interaction between energy and loudness. Adding release year information tells us that older tracks tend to be more acoustic, and less loud. This conclusion seems fitting, as older tracks before the appearance of electronic instruments would clearly tend to be more acoustic. Studies have shown that music has been getting louder with time.
 
 In conclusion, while this PCA analysis struggles to truly reduce the number of variables needed, some interesting interactions can be observed such as the inverse relationship between acousticness and energy/loudness which point to an evolution in music styles through the years.
 
@@ -1201,16 +1073,11 @@ clustering_data <- dataset_clean %>%
   scale()
 ```
 
-A K-means clustering analysis was conducted using the R package *factoextra*.
-To perform this analysis, only numeric variables related to track features were selected: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time_signature**.
-These variables were chosen because they are metrics developed by Spotify, which does not disclose the exact methodologies behind their computation.
+A K-means clustering analysis was conducted using the R package *factoextra*. To perform this analysis, only numeric variables related to track features were selected: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time_signature**. These variables were chosen because they are metrics developed by Spotify, which does not disclose the exact methodologies behind their computation.
 
-It is speculated that Spotify may use some type of clustering technique to derive these features, potentially to better categorize musical genres and preferences.
-This makes clustering an appropriate method for exploring patterns within the dataset.
+It is speculated that Spotify may use some type of clustering technique to derive these features, potentially to better categorize musical genres and preferences. This makes clustering an appropriate method for exploring patterns within the dataset.
 
-The first step in the clustering process is to determine the optimal number of clusters.
-This was done using the Total Within-Cluster Sum of Squares (TWSS) as the evaluation metric.
-By identifying the elbow point in the TWSS curve, the appropriate number of clusters can be selected.
+The first step in the clustering process is to determine the optimal number of clusters. This was done using the Total Within-Cluster Sum of Squares (TWSS) as the evaluation metric. By identifying the elbow point in the TWSS curve, the appropriate number of clusters can be selected.
 
 ```{r}
 fviz_nbclust(clustering_data,
@@ -1240,10 +1107,7 @@ ggplot(song_df, aes(y=value, group=Clust, fill=Clust)) +
   facet_wrap(~variable)
 ```
 
-Some patterns seem to emerge from this clustering.
-Cluster 9 appears to have lower values for mode compared to others.
-Cluster 4 has higher speechiness, while clusters 5 and 6 show slightly more acousticness.
-Cluster 5 also has much higher instrumentalness, and cluster 7 has a significantly lower time signature than the rest.
+Some patterns seem to emerge from this clustering. Cluster 9 appears to have lower values for mode compared to others. Cluster 4 has higher speechiness, while clusters 5 and 6 show slightly more acousticness. Cluster 5 also has much higher instrumentalness, and cluster 7 has a significantly lower time signature than the rest.
 
 ```{r}
 song_comp <- data.frame(
@@ -1267,10 +1131,7 @@ song_comp %>%
   kable_styling()
 ```
 
-Looking at the release year, some patterns emerge.
-In terms of count, clusters **1** and **9** contain the most observations.
-Cluster 9 stands out for having the lowest median release year overall.
-It is also important to note that differences between the mean and median values, as well as the overall shift toward recent years, are likely due to an imbalance in the dataset, with more recent tracks represented.
+Looking at the release year, some patterns emerge. In terms of count, clusters **1** and **9** contain the most observations. Cluster 9 stands out for having the lowest median release year overall. It is also important to note that differences between the mean and median values, as well as the overall shift toward recent years, are likely due to an imbalance in the dataset, with more recent tracks represented.
 
 The same analysis can be applied to identify genres within each cluster.
 
@@ -1330,10 +1191,7 @@ Top_songs <- top_genres_by_cluster %>%
 Top_songs
 ```
 
-While this graph is interesting, it does not account for the overall distribution of genres.
-For instance, *Pop* and *Dance Pop* are by far the most present genres in the dataset with respectively *2660* and *1655* instances.
-To address this, we compute the relative proportion of each genre $rel_in_cluster = cluster_n / total_n$, for example, pop appears 599 times in Cluster 1 out of 2660 total appearances.
-Only genres with at least 500 appearances are considered to focus only on main genres instead of niche ones.
+While this graph is interesting, it does not account for the overall distribution of genres. For instance, *Pop* and *Dance Pop* are by far the most present genres in the dataset with respectively *2660* and *1655* instances. To address this, we compute the relative proportion of each genre $rel_in_cluster = cluster_n / total_n$, for example, pop appears 599 times in Cluster 1 out of 2660 total appearances. Only genres with at least 500 appearances are considered to focus only on main genres instead of niche ones.
 
 ```{r}
 top_genres_by_cluster %>% 
@@ -1357,9 +1215,7 @@ We identify the top two genres for each cluster.\
 - **Cluster 8**: Appears to be focused on Australian music.\
 - **Cluster 9**: Dominated by Pop and Dance Pop.
 
-This clustering also reveals trends related to popularity.
-Some clusters may represent more popular songs than others.
-This can be visualized easily using boxplots.
+This clustering also reveals trends related to popularity. Some clusters may represent more popular songs than others. This can be visualized easily using boxplots.
 
 ```{r}
 song_pop <- data.frame(
@@ -1384,37 +1240,23 @@ ggplot(song_pop, aes(x = Clust, y = popularity, fill = Clust)) +
 
 ```
 
-Surprisingly, the differences in popularity between clusters are not as pronounced as one might expect.
-Nevertheless, Cluster 4—dominated by rap—appears to be the most popular.
-Clusters 5 and 7, which include many songs with "No genre" labels, seem to be the least popular.
+Surprisingly, the differences in popularity between clusters are not as pronounced as one might expect. Nevertheless, Cluster 4—dominated by rap—appears to be the most popular. Clusters 5 and 7, which include many songs with "No genre" labels, seem to be the least popular.
 
-To conclude, one key takeaway from this clustering analysis is that the large volume of tracks likely affects the clarity of the results.
-Still, meaningful insights can be drawn—especially regarding genres.
-The analysis suggests that genres are, at least partially, distinguishable using Spotify’s audio features.
+To conclude, one key takeaway from this clustering analysis is that the large volume of tracks likely affects the clarity of the results. Still, meaningful insights can be drawn—especially regarding genres. The analysis suggests that genres are, at least partially, distinguishable using Spotify’s audio features.
 
-Release year and popularity offer additional context.
-The main insight is that our dataset contains significantly more recent songs, and that these tend to be more popular.
-Currently, genres such as *Pop*, *Dance Pop*, *Rap*, and *Hip-Hop* dominate popular music.
+Release year and popularity offer additional context. The main insight is that our dataset contains significantly more recent songs, and that these tend to be more popular. Currently, genres such as *Pop*, *Dance Pop*, *Rap*, and *Hip-Hop* dominate popular music.
 
 # Conclusion
 
-This study set out to explore whether machine learning techniques could effectively predict a song’s release period and uncover stylistic patterns in popular music using audio and metadata features.
-By combining supervised and unsupervised learning methods, we evaluated the extent to which musical characteristics reflect temporal trends across time.
+This study set out to explore whether machine learning techniques could effectively predict a song’s release period and uncover stylistic patterns in popular music using audio and metadata features. By combining supervised and unsupervised learning methods, we evaluated the extent to which musical characteristics reflect temporal trends across time.
 
-The results demonstrate that while musical features alone do not allow for precise year-by-year prediction, they do contain significant temporal signals that support broader classifications.
-The Random Forest model, when applied to a binary classification task distinguishing songs released before and after 2007, performed particularly well.
-This suggests that machine learning is capable of capturing the evolution of popular music at a macro level, even if it struggles with more granular distinctions between adjacent periods.
+The results demonstrate that while musical features alone do not allow for precise year-by-year prediction, they do contain significant temporal signals that support broader classifications. The Random Forest model, when applied to a binary classification task distinguishing songs released before and after 2007, performed particularly well. This suggests that machine learning is capable of capturing the evolution of popular music at a macro level, even if it struggles with more granular distinctions between adjacent periods.
 
-The neural network model combining tabular audio features and album cover images showed no sign of overfitting and demonstrated moderate predictive capacity.
-However, the average error of approximately 8 years highlights the difficulty of predicting the exact release year of a song, even with enriched inputs.
-While the model was able to capture certain temporal patterns, a substantial portion of the variance remains unexplained, suggesting that additional factors may play a critical role in determining a song’s place in time.
+The neural network model combining tabular audio features and album cover images showed no sign of overfitting and demonstrated moderate predictive capacity. However, the average error of approximately 8 years highlights the difficulty of predicting the exact release year of a song, even with enriched inputs. While the model was able to capture certain temporal patterns, a substantial portion of the variance remains unexplained, suggesting that additional factors may play a critical role in determining a song’s place in time.
 
-Unsupervised clustering provided complementary insights, revealing that genres and stylistic groupings are partially recoverable using Spotify's audio features.
-However, the clarity of these results was affected by the large volume of data and imbalance in the temporal distribution of songs.
+Unsupervised clustering provided complementary insights, revealing that genres and stylistic groupings are partially recoverable using Spotify's audio features. However, the clarity of these results was affected by the large volume of data and imbalance in the temporal distribution of songs.
 
-In summary, this study contributes to the growing field of music analytics by demonstrating how machine learning can uncover meaningful patterns in musical data.
-While current models are limited in their ability to deliver highly accurate release year predictions, they offer valuable tools for tracing stylistic evolution and classifying music into broader historical categories.
-Future research could enhance these findings by integrating lyrical analysis, social metadata, and regional diversity to better capture the cultural complexity behind popular music’s evolution.
+In summary, this study contributes to the growing field of music analytics by demonstrating how machine learning can uncover meaningful patterns in musical data. While current models are limited in their ability to deliver highly accurate release year predictions, they offer valuable tools for tracing stylistic evolution and classifying music into broader historical categories. Future research could enhance these findings by integrating lyrical analysis, social metadata, and regional diversity to better capture the cultural complexity behind popular music’s evolution.
 
 # Appendix
 
@@ -1435,111 +1277,44 @@ rect.hclust(song_hc, k=9)
 song_clust_hc <- cutree(song_hc, k=9)
 ```
 
-Due to poor performance from the hierarchical clustering, the decision was made to only focus on k-means clustering.
-In subsequent studies, a deeper focus on this clustering technique could be conducted.
+Due to poor performance from the hierarchical clustering, the decision was made to only focus on k-means clustering. In subsequent studies, a deeper focus on this clustering technique could be conducted.
 
 # References
 
-Aguiar, L., & Waldfogel, J.
-(2018). 
-*Platforms, promotion, and product discovery: Evidence from Spotify playlists* (NBER Working Paper No. 24713).
-National Bureau of Economic Research. 
-https://www.nber.org/papers/w24713
+Aguiar, L., & Waldfogel, J. (2018).  *Platforms, promotion, and product discovery: Evidence from Spotify playlists* (NBER Working Paper No. 24713). National Bureau of Economic Research.  https://www.nber.org/papers/w24713
 
-Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023).
-*Songs popularity analysis using Spotify data: An exploratory study*.
-In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223).
-https://www.researchgate.net/publication/384286217
+Beesa, P., Naregavi, V., Imandar, J., & Thatte, S (2023). *Songs popularity analysis using Spotify data: An exploratory study*. In Vidhyayana – An International Multidisciplinary Peer-Reviewed E-Journal, Volume 8, Special Issue 7, 4th National Student Research Conference on “Innovative Ideas and Invention in Computer Science & IT with its Sustainability” (pp. 211–223). https://www.researchgate.net/publication/384286217
 
-Choi, K., Fazekas, G., Sandler, M., & Cho, K.
-(2017).
-*Convolutional recurrent neural networks for music classification*.
-2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2392–2396.
-https://doi.org/10.1109/ICASSP.2017.7952585
+Choi, K., Fazekas, G., Sandler, M., & Cho, K. (2017). *Convolutional recurrent neural networks for music classification*. 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2392–2396. https://doi.org/10.1109/ICASSP.2017.7952585
 
-Eriksson, M., Fleischer, R., Johansson, A., Snickars, P., & Vonderau, P. (2019). 
-*Spotify teardown: Inside the black box of streaming music*.
-MIT Press.
+Eriksson, M., Fleischer, R., Johansson, A., Snickars, P., & Vonderau, P. (2019).  *Spotify teardown: Inside the black box of streaming music*. MIT Press.
 
-Friberg, A., Erkut, C., & Bresin, R.
-(2011).
-*Perceptual ratings of musical parameters*.
-Proceedings of the International Conference on Music Perception and Cognition (ICMPC), 193–198.
+Friberg, A., Erkut, C., & Bresin, R. (2011). *Perceptual ratings of musical parameters*. Proceedings of the International Conference on Music Perception and Cognition (ICMPC), 193–198.
 
-Gómez-Cañón, J. S., Cano, E., Eerola, T., Herrera, P., Hu, X., Yang, Y.-H., & Gómez, E.
-(2021).
-Music emotion recognition: Toward new, robust standards in personalized and context-sensitive applications.
-*EEE Signal Processing Magazine, 38*(6), 106–114.
+Gómez-Cañón, J. S., Cano, E., Eerola, T., Herrera, P., Hu, X., Yang, Y.-H., & Gómez, E. (2021). Music emotion recognition: Toward new, robust standards in personalized and context-sensitive applications. *EEE Signal Processing Magazine, 38*(6), 106–114.
 
-Herremans, D., Martens, D., & Sörensen, K.
-(2019).
-*Dance hit song prediction*.
-University of Antwerp Operations Research Group Applied Data Mining Research Group, University of Antwerp.
+Herremans, D., Martens, D., & Sörensen, K. (2019). *Dance hit song prediction*. University of Antwerp Operations Research Group Applied Data Mining Research Group, University of Antwerp.
 
-Hesmondhalgh, D., Campos Valverde, R., Valdovinos Kaye, D. B., & Li, Z.
-(2023). 
-*The impact of algorithmically driven recommendation systems on music consumption and production: A literature review*.
-Centre for Data Ethics and Innovation.
+Hesmondhalgh, D., Campos Valverde, R., Valdovinos Kaye, D. B., & Li, Z. (2023).  *The impact of algorithmically driven recommendation systems on music consumption and production: A literature review*. Centre for Data Ethics and Innovation.
 
-House of Commons Digital, Culture, Media and Sport Committee.
-(2021). 
-*Economics of music streaming: Second report of session 2021–22 (HC 50)*.
-UK Parliament.
+House of Commons Digital, Culture, Media and Sport Committee. (2021).  *Economics of music streaming: Second report of session 2021–22 (HC 50)*. UK Parliament.
 
-Interiano, M., Kazemi, K., Wang, L., Yang, J., & Komarova, N. L.
-(2018).
-*Musical trends and predictability of success in contemporary songs in and out of the top charts*.
-Royal Society Open Science, 5(5), 171274.
-https://doi.org/10.1098/rsos.171274
+Interiano, M., Kazemi, K., Wang, L., Yang, J., & Komarova, N. L. (2018). *Musical trends and predictability of success in contemporary songs in and out of the top charts*. Royal Society Open Science, 5(5), 171274. https://doi.org/10.1098/rsos.171274
 
-Jan Van Balen, L., Burgoyne, J. A., Bountouridis, D., Müllensiefen, D., & Honingh, A.
-(2015).
-*Corpus analysis tools for computational hook discovery*.
-Proceedings of the 17th ISMIR Conference, 227–233.
+Jan Van Balen, L., Burgoyne, J. A., Bountouridis, D., Müllensiefen, D., & Honingh, A. (2015). *Corpus analysis tools for computational hook discovery*. Proceedings of the 17th ISMIR Conference, 227–233.
 
-Kim, Y. E., Schmidt, E. M., Migneco, R., Morton, B. G., Richardson, P., Scott, J., ...
-& Turnbull, D.
-(2010).
-*Music emotion recognition: A state of the art review*.
-Proceedings of the 11th International Society for Music Information Retrieval Conference (ISMIR), 255–266.
+Kim, Y. E., Schmidt, E. M., Migneco, R., Morton, B. G., Richardson, P., Scott, J., ... & Turnbull, D. (2010). *Music emotion recognition: A state of the art review*. Proceedings of the 11th International Society for Music Information Retrieval Conference (ISMIR), 255–266.
 
-Mauch, M., MacCallum, R. M., Levy, M., & Leroi, A. M.
-(2015).
-*The evolution of popular music: USA 1960–2010*.
-Royal Society Open Science, 2(5), 150081.
-https://doi.org/10.1098/rsos.150081
+Mauch, M., MacCallum, R. M., Levy, M., & Leroi, A. M. (2015). *The evolution of popular music: USA 1960–2010*. Royal Society Open Science, 2(5), 150081. https://doi.org/10.1098/rsos.150081
 
-Müller, M., Ewert, S., & Grosche, P. (2010).
-*Musical structure analysis using audio features*.
-In Müller, M.
-(Ed.), Fundamentals of Music Processing (pp. 135–154).
-Springer.
-https://doi.org/10.1007/978-3-319-21945-5_6
+Müller, M., Ewert, S., & Grosche, P. (2010). *Musical structure analysis using audio features*. In Müller, M. (Ed.), Fundamentals of Music Processing (pp. 135–154). Springer. https://doi.org/10.1007/978-3-319-21945-5_6
 
-Pachet, F.
-(2008).
-*Hit song science is not yet a science*.
-Proceedings of the 9th International Conference on Music Information Retrieval (ISMIR), 355–360.
+Pachet, F. (2008). *Hit song science is not yet a science*. Proceedings of the 9th International Conference on Music Information Retrieval (ISMIR), 355–360.
 
-Schedl, M., Gómez, E., & Urbano, J.
-(2015).
-*Music information retrieval: Recent developments and applications*.
-Foundations and Trends in Information Retrieval, 8(2-3), 127–261.
-https://doi.org/10.1561/1500000042
+Schedl, M., Gómez, E., & Urbano, J. (2015). *Music information retrieval: Recent developments and applications*. Foundations and Trends in Information Retrieval, 8(2-3), 127–261. https://doi.org/10.1561/1500000042
 
-Seaver, N.
-(2022). 
-*Computing taste: Algorithms and the makers of music recommendation*.
-University of Chicago Press.
+Seaver, N. (2022).  *Computing taste: Algorithms and the makers of music recommendation*. University of Chicago Press.
 
-Serrà, J., Corral, Á., Boguñá, M., Haro, M., & Arcos, J. L.
-(2012).
-*Measuring the evolution of contemporary Western popular music*.
-Scientific Reports, 2(1), 521.
-https://doi.org/10.1038/srep00521
+Serrà, J., Corral, Á., Boguñá, M., Haro, M., & Arcos, J. L. (2012). *Measuring the evolution of contemporary Western popular music*. Scientific Reports, 2(1), 521. https://doi.org/10.1038/srep00521
 
-Spotify.
-(2023).
-*How Spotify’s popularity score works*.
-Spotify Developer Documentation.
-Retrieved from https://developer.spotify.com/
+Spotify. (2023). *How Spotify’s popularity score works*. Spotify Developer Documentation. Retrieved from https://developer.spotify.com/
