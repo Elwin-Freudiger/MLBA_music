@@ -12,17 +12,21 @@ format:
     toc: true
     number-sections: true
     colorlinks: true
-abstract: |
 editor: 
   markdown: 
     wrap: sentence
+abstract: |
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      fig.width = 2,
+                      fig.height = 2,
+                      fig.align = "center")
 ```
 
-```{r, echo=FALSE, message=FALSE}
+```{r}
 #| echo: false
 #| message: false
 
@@ -33,7 +37,6 @@ library(broom)
 library(reshape2)
 library(magrittr)
 library(corrplot)
-library(plotly)
 library(ggcorrplot)
 library(factoextra)
 library(gridExtra)
@@ -48,12 +51,12 @@ library(lubridate)
 library(caret)
 ```
 
-```{r,, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 #spotify <- read_csv("r_scripts/top_10000_1950-now.csv")
-spotify <- read_csv("top_10000_1950-now.csv")
+spotify <- read_csv("top_10000_1950-now.csv", show_col_types = FALSE)
 ```
 
-# 1. Introduction
+# Introduction
 
 The primary objective of this project is to apply machine learning techniques to a dataset of 10,000 top-charting songs from the ARIA and Billboard rankings, spanning from the 1950s to 2024.
 Using audio and metadata features provided by Spotify, the project aims to explore the evolution of musical trends and understand the key characteristics that define popular music across different decades.
@@ -105,7 +108,7 @@ It also addresses gaps in the literature regarding the feasibility of using read
 
 Finally, this study serves as a practical application of machine learning techniques in the music domain, offering insights for musicologists, data scientists, and digital media analysts interested in the computational modeling of cultural data.
 
-# 2. Data
+# Data
 
 ## Sources
 
@@ -119,34 +122,10 @@ It includes metadata and audio-based features extracted via the Spotify API, suc
 In addition to representing a variety of genres, artists, and time periods, the dataset reflects shifting cultural and musical preferences.
 As such, it provides a robust foundation for both exploratory data analysis and machine learning applications, particularly those aimed at uncovering temporal trends, predicting historical context (e.g., release period), and identifying latent patterns in music characteristics.
 
-## Image Data
-
-In order to enhance the predictions, album covers were selected to be added as input in the neural network model.
-The orginal dataset uses a link provided by spotify to retrieve each image.
-
-All images are retrieved from their respective links, resized to be 64x64 pixels.
-The size was chosen to balance concerns of space and usefulness.
-Indeed, a 16x16 pixel image would provide hardly any useful information.
-On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store.
-All images are then saved locally, with their Spotify Song ID as a filename.
-This process was performed in parallel using multi-treading.
-This enables a much faster processing time.
-
-Image examples can be seen here:
-
-::: {#fig-album layout-ncol="4"}
-![Taylor Swift](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png){#fig-tay} ![Sabrina Carpenter](../data/clean/images/0lBwoEOqZNwm07Pd8Hwj3L.png){#fig-carpenter} ![AC/DC](../data/clean/images/2d4e45fmUnguxh6yqC7gNT.png){#fig-acdc} ![ABBA](../data/clean/images/0GjEhVFGZW8afUYGChu3Rr.png){#fig-abba}
-
-Examples of album covers, resized to 64×64 pixels and represented with RGB color channels
-:::
-
 ## Description
 
-```{r}
-#| echo: false
-#| message: false
-
-dim(spotify)
+```{r, include=FALSE, echo=FALSE}
+#dim(spotify)
 ```
 
 The dataset comprises 10,000 entries and 35 variables, encompassing information related to song popularity, artist identity, release date, and various musical attributes.
@@ -188,20 +167,6 @@ The dataset comprises 10,000 entries and 35 variables, encompassing information 
 | album_genres | Genres associated with the album | character | rock, progressive rock |
 | label | Record label | character | EMI |
 | copyrights | Copyright info for the album or track | character | ℗ 1975 Queen Productions Ltd. |
-
-```{r}
-#| echo: false
-#| message: false
-
-# Preview the dataset
-knitr::kable(head(spotify), 
-             format = "markdown", 
-             align = 'c', 
-             table.attr = 'class="table table-bordered"',
-             row.names = FALSE) %>%
-  kable_styling(font_size = 10, full_width = FALSE, position = "center")
-
-```
 
 ## Wrangling / Cleaning
 
@@ -259,8 +224,6 @@ spotify <- spotify |>
 
 spotify_vr <- spotify |>
   select(-artist_uris, -album_uri,-album_artist_uris,-album_artist_names, -disc_number,-preview_url, -isrc, -added_by, -added_at, -album_genres, -copyrights,-key)
-
-ncol(spotify_vr)
 ```
 
 The resulting dataset consists of 23 columns, containing only the variables relevant for the subsequent analysis after the removal of redundant and non-informative features.
@@ -278,17 +241,22 @@ spotify_vr <- spotify_vr |>
   mutate(track_uri = str_extract(track_uri, "[^:]+$"))
 ```
 
-```{r}
-#| echo: false
+## Image Data
 
-# Preview the dataset
-knitr::kable(head(spotify_vr), 
-             format = "markdown", 
-             align = 'c', 
-             table.attr = 'class="table table-bordered"',
-             row.names = FALSE) %>%
-  kable_styling(font_size = 10, full_width = FALSE, position = "center")
-```
+In order to enhance the predictions, album covers were selected to be added as input in the neural network model.
+The orginal dataset uses a link provided by spotify to retrieve each image.
+
+All images are retrieved from their respective links, resized to be 64x64 pixels.
+The size was chosen to balance concerns of space and usefulness.
+Indeed, a 16x16 pixel image would provide hardly any useful information.
+On the other hand, a 600x600 image would provide plenty of information, but would be difficult to store.
+All images are then saved locally, with their Spotify Song ID as a filename.
+This process was performed in parallel using multi-treading.
+This enables a much faster processing time.
+
+Image examples can be seen below:
+
+![Taylor Swift's Red Album cover resized to 64x64 pixels and represented with RGB color channels](../data/clean/images/5ybJm6GczjQOgTqmJ0BomP.png)
 
 ## Spotting Mistakes and Missing Data
 
@@ -297,14 +265,6 @@ Then, the release year is extracted from the release date and converted to a num
 
 The dataset have a total of 625 missing values before cleaning.
 After cleaning we still have 547 missing values, all of them concern the *artist_genres*.
-
-```{r}
-#| echo: false
-#| message: false
-
-# Count total missing values
-sum(is.na(spotify_vr))  # This will return the total number of NAs
-```
 
 ```{r}
 dataset_clean <- spotify_vr |>
@@ -318,7 +278,6 @@ dataset_clean <- dataset_clean |>
 colSums(is.na(dataset_clean)) |>
   head(20) |>  # Limit to first 20 rows for readability
   kable(
-    format = "html",
     caption = "Rows with Missing or Blank Values"
   ) |>
   kable_styling(
@@ -394,7 +353,7 @@ Variables such as danceability, energy, key, loudness, mode, speechiness, acoust
 
 ## Correlation Matrix
 
-# 3. Exploratory Data Analysis
+# Exploratory Data Analysis
 
 To gain a comprehensive understanding of the dataset and uncover patterns relevant to the modeling phase, an exploratory data analysis (EDA) is conducted.
 This phase involves the systematic examination of the dataset’s structure, distributions, and relationships among variables.
@@ -450,7 +409,6 @@ year_hist <- dataset_clean %>%
   theme_minimal() +
   labs(title = "Number of songs by release year", x="Year") 
 year_hist
-#year_hist %>% ggplotly()
 ```
 
 Release year is the dependent variable in this analysis, and it is considered at the level of yearly granularity.
@@ -846,53 +804,53 @@ genre_pop <- dataset_clean %>%
 genre_pop
 ```
 
-# 4. Machine Learning Methods
+# Machine Learning Methods
 
 In this study, we aim to predict the release year of a song based on its musical characteristics by applying and comparing several machine learning methods.
 Both supervised and unsupervised learning techniques are employed to explore the data structure and improve prediction performance.
 
-### **Supervised Learning Methods**
+### Supervised Learning Methods
 
 Supervised learning involves building models that learn from labeled data, where the outcome variable (in our case, the song's year) is known.
 The goal is to find a function that best predicts this outcome from a set of features.
 
-#### **Random Forest**
+#### Random Forest
 
 Random Forest (RF) is an ensemble learning method that builds a large number of decision trees during training and outputs either the mode (for classification) or the mean (for regression) of the individual tree predictions.
 It combines two key ideas: bagging (training trees on bootstrapped samples of the data) and random feature selection at each split, which helps reduce variance and improve model generalization.
 In this context, RF will be used to predict the release year of a song as a regression task, leveraging its robustness to overfitting and capacity to handle complex interactions between features.
 
-#### **Neural Networks**
+#### Neural Networks
 
 Artificial Neural Networks (NN) are flexible, layered models composed of nodes (neurons) that compute weighted sums of inputs and apply non-linear activation functions.
 They are particularly effective for capturing complex, non-linear relationships in data.
 In our study, we use NNs with one or more hidden layers to model the relationship between musical features and the year of release, treating this as a regression problem.
 The model is trained using gradient descent to minimize a loss function, typically the mean squared error (MSE).
 
-### **Unsupervised Learning Methods**
+### Unsupervised Learning Methods
 
 Unsupervised learning does not use labeled data but instead focuses on uncovering hidden structures within the data.
 This can be particularly useful in exploratory phases to detect patterns and validate assumptions about the features.
 
-#### **K-means Clustering**
+#### K-means Clustering
 
 K-means is a partitioning method that groups data into a predefined number of clusters (k) by minimizing the within-cluster sum of squares.
 The algorithm iteratively assigns each instance to the nearest cluster centroid and updates the centroids until convergence.
 In our analysis, K-means is used to examine whether natural groupings exist among songs based on their musical attributes, potentially revealing eras or genres that influence the release year.
 
-#### **Hierarchical Clustering**
-
-Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points.
-We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step.
-This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
-
-#### **Principal Component Analysis (PCA)**
+#### Principal Component Analysis (PCA)
 
 PCA is a dimensionality reduction technique that transforms the original features into a smaller number of uncorrelated components that retain most of the data variance.
 In this study, PCA is used to reduce the high-dimensional musical feature space into a more manageable form for visualization and clustering.
 Additionally, PCA components may be used as inputs to supervised models to mitigate multicollinearity and improve performance.
 
-# 5. Results
+#### Hierarchical Clustering
+
+Hierarchical clustering builds a tree-like structure (dendrogram) of nested clusters based on the similarity between data points.
+We apply the agglomerative approach, where each song starts as its own cluster, and the closest clusters are merged step-by-step.
+This method helps visualize relationships between songs and investigate whether certain musical profiles correspond to specific periods or styles.
+
+# Results
 
 ## Supervised Learning
 
@@ -909,9 +867,6 @@ spotify_dec <- dataset_clean |>
     year = as.numeric(substr(release_date, 1, 4)),
     decade = floor(year / 10) * 10
   )
-
-spotify_dec |>
-  count(decade, sort = TRUE)
 ```
 
 ```{r}
@@ -928,9 +883,6 @@ spotify_grouped <- spotify_cleaned %>%
       TRUE ~ as.character(decade)
     )
   )
-
-spotify_grouped %>%
-  count(decade_group, sort = TRUE)
 ```
 
 ```{r}
@@ -974,7 +926,7 @@ rf_model <- randomForest(decade ~ ., data = train)
 pred <- predict(rf_model, newdata = test)
 
 # Accuracy
-mean(pred == test$decade)
+#mean(pred == test$decade)
 ```
 
 ```{r}
@@ -983,7 +935,6 @@ pred <- predict(rf_model, newdata = test)
 
 # Accuracy
 accuracy <- mean(pred == test$decade)
-print(accuracy)
 
 # Confusion matrix
 cm <- caret::confusionMatrix(pred, test$decade)
@@ -1040,7 +991,6 @@ spotify_clean <- dataset_clean |>
 
 # Calculate and display the median
 median_year <- median(spotify_dec$year, na.rm = TRUE)
-print(median_year)
 
 spotify_binary <- spotify_clean |>
   mutate(
@@ -1074,7 +1024,6 @@ pred <- predict(rf_model, newdata = test)
 
 # Accuracy
 accuracy <- mean(pred == test$after_median)
-print(accuracy)
 
 # Confusion Matrix
 library(caret)
@@ -1145,10 +1094,83 @@ Nonetheless, the model does capture some temporal patterns, indicating potential
 
 ## Unsupervised Learning
 
-Several methods can be used for unsupervised learning, among them, K-means clustering, Hierarchical Clustering and PCA were performed, due to somewhat disappointing results for Hierarchical Clustering and PCA, only K-means clustering was kept.
-Nevertheless, the code for other methods can be found in the Appendix, presented as is, without result analysis.
+Several methods can be used for unsupervised learning, among them, K-means clustering, Hierarchical Clustering and PCA were performed, due to somewhat disappointing results for Hierarchical Clustering, only K-means clustering was retained.
 
-### Clustering
+### Principal Component Analysis
+
+Principal Component Analysis is a dimension reduction technique that helps potentially reduce the number of variables used and that uncovers interactions between variables.
+
+```{r, echo=FALSE}
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
+```
+
+```{r}
+fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
+```
+
+The above graph shows the percentage of explained variance by dimension. As can be observed, the variance explained by 3 dimensions is only 49.3% which is quite underwhelming.
+
+```{r}
+p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
+p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
+p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
+grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
+```
+
+6 dimensions do explain a bit more of the variance, but remain difficult to interpret. Some patterns do emerge. For example, Dimension 1 seems to be related to acousticness vs energy and loudness. On the other hand, Dimension 3 seems to be related with instrumentalness. Dimension 5 also seems to relate with mode. 
+
+```{r, message=FALSE}
+# 1. Prepare numeric data and keep release_year for color
+pca_data <- dataset_clean %>%
+  filter(release_year>0) %>% 
+  drop_na() %>% 
+  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
+  scale()
+
+# 2. Run PCA on everything except release_year
+pca_result <- prcomp(pca_data, scale. = TRUE)
+
+# 3. Extract PCA scores and add release year for coloring
+pca_scores <- as.data.frame(pca_result$x[, 1:2])
+release_years <- dataset_clean %>%
+  filter(release_year > 0) %>%
+  drop_na() %>%
+  pull(release_year)
+pca_scores$release_year <- release_years
+
+# 4. Extract loading for arrows
+loadings <- as.data.frame(pca_result$rotation[, 1:2])
+loadings$variable <- rownames(loadings)
+
+# 5. Plot PCA with arrows and color by release year
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
+  geom_point(alpha = 0.6) +
+  scale_color_viridis_c(option = "plasma") +
+  geom_segment(data = loadings,
+               aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5),  # arrows, scaled
+               arrow = arrow(length = unit(0.2, "cm")), color = "gray30") +
+  geom_text(data = loadings,
+            aes(x = PC1 * 5.3, y = PC2 * 5.3, label = variable),
+            size = 3, color = "gray20") +
+  labs(
+    title = "PCA Biplot of Song Features",
+    x = "PC1",
+    y = "PC2",
+    color = "Release Year"
+  ) +
+  theme_minimal()
+```
+Observing the relation with dimension 1 and 2 colored by release year, Dimension 1 displays the negative relation between acousticness and the positive interaction between energy and loudness. Adding release year information tells us that older tracks tend to be more acoustic, and less loud. This conclusion seems fitting, as older tracks before the appearance of electronic instruments would clearly tend to be more acoustic. Studies have shown that music has been getting louder with time.
+
+In conclusion, while this PCA analysis struggles to truly reduce the number of variables needed, some interesting interactions can be observed such as the inverse relationship between acousticness and energy/loudness which point to an evolution in music styles through the years.
+
+### K-means clustering
 
 ```{r}
 clustering_data <- dataset_clean %>% 
@@ -1158,17 +1180,11 @@ clustering_data <- dataset_clean %>%
   scale()
 ```
 
-### K-means clustering
+A K-means clustering analysis was conducted using the R package *factoextra*. To perform this analysis, only numeric variables related to track features were selected: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, and time_signature**. These variables were chosen because they are metrics developed by Spotify, which does not disclose the exact methodologies behind their computation.
 
-We'll start by fitting a k-means clustering, using the R package *factoextra*.
-Only numeric variables were chosen to conduct this clustering experiment, and more specifically only track features were selected, these include: **danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, time_signature**.
-The decision to only take up an interest in these variables is because these were created by spotify, who does not release any information regarding these features and the calculation behind.
-One lead may be that these features are caclulated through some sort of clustering to help understand different features and music genres trough it.
-A clustering analysis of tracks is therefore quite fitting.
+It is speculated that Spotify may use some type of clustering technique to derive these features, potentially to better categorize musical genres and preferences. This makes clustering an appropriate method for exploring patterns within the dataset.
 
-The first step in clustering is to determine the optimal number of clusters.
-The metric used to choose the number of clusters is Total within-cluster sum of squares (TWSS).
-An elbow must be found, which will determine the choice of clusters.
+The first step in the clustering process is to determine the optimal number of clusters. This was done using the Total Within-Cluster Sum of Squares (TWSS) as the evaluation metric. By identifying the elbow point in the TWSS curve, the appropriate number of clusters can be selected.
 
 ```{r}
 fviz_nbclust(clustering_data,
@@ -1179,12 +1195,7 @@ fviz_nbclust(clustering_data,
 
 ```
 
-Based on the graph, it was decided to chose 9 as the number of clusters.
-An analysis of these clusters can be found in result analysis section.
-
-### Clustering
-
-Based on the methodology discussed above, k-means clustering was run with 9 centers.
+Based on the graph, it was decided to choose 9 clusters.
 
 ```{r}
 song_km <- kmeans(clustering_data, centers=9)
@@ -1351,8 +1362,6 @@ Surprisingly, the differences in popularity between clusters are not as pronounc
 Nevertheless, Cluster 4—dominated by rap—appears to be the most popular.
 Clusters 5 and 7, which include many songs with "No genre" labels, seem to be the least popular.
 
-### Conclusion
-
 To conclude, one key takeaway from this clustering analysis is that the large volume of tracks likely affects the clarity of the results.
 Still, meaningful insights can be drawn—especially regarding genres.
 The analysis suggests that genres are, at least partially, distinguishable using Spotify’s audio features.
@@ -1361,7 +1370,7 @@ Release year and popularity offer additional context.
 The main insight is that our dataset contains significantly more recent songs, and that these tend to be more popular.
 Currently, genres such as *Pop*, *Dance Pop*, *Rap*, and *Hip-Hop* dominate popular music.
 
-# 6. Conclusion
+# Conclusion
 
 This study set out to explore whether machine learning techniques could effectively predict a song’s release period and uncover stylistic patterns in popular music using audio and metadata features.
 By combining supervised and unsupervised learning methods, we evaluated the extent to which musical characteristics reflect temporal trends across time.
@@ -1381,7 +1390,7 @@ In summary, this study contributes to the growing field of music analytics by de
 While current models are limited in their ability to deliver highly accurate release year predictions, they offer valuable tools for tracing stylistic evolution and classifying music into broader historical categories.
 Future research could enhance these findings by integrating lyrical analysis, social metadata, and regional diversity to better capture the cultural complexity behind popular music’s evolution.
 
-# 7. Appendix
+# Appendix
 
 ## Hierarchical clustering
 
@@ -1402,80 +1411,6 @@ song_clust_hc <- cutree(song_hc, k=9)
 
 Due to poor performance from the hierarchical clustering, the decision was made to only focus on k-means clustering.
 In subsequent studies, a deeper focus on this clustering technique could be conducted.
-
-## Principal component analysis
-
-```{r, echo=FALSE}
-pca_data <- dataset_clean %>%
-  filter(release_year>0) %>% 
-  drop_na() %>% 
-  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
-  scale()
-
-songs_pca <- PCA(pca_data, ncp = 11, graph = FALSE)
-songs_pca
-```
-
-```{r}
-fviz_pca_var(songs_pca)
-```
-
-```{r}
-fviz_contrib(songs_pca, choice = "var", axes = 1)
-```
-
-```{r}
-fviz_eig(songs_pca, addlabels = TRUE, ncp=11)
-```
-
-```{r}
-p1 <- fviz_pca_biplot(songs_pca, axes = 1:2) 
-p2 <- fviz_pca_biplot(songs_pca, axes = 3:4) 
-p3 <- fviz_pca_biplot(songs_pca, axes = 5:6) 
-grid.arrange(p1, p2, p3, nrow = 2, ncol=2)
-```
-
-```{r, message=FALSE}
-# 1. Prepare numeric data and keep release_year for color
-pca_data <- dataset_clean %>%
-  filter(release_year>0) %>% 
-  drop_na() %>% 
-  select(c(danceability, energy, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo)) %>%
-  scale()
-
-# 2. Run PCA on everything except release_year
-pca_result <- prcomp(pca_data, scale. = TRUE)
-
-# 3. Extract PCA scores and add release year for coloring
-pca_scores <- as.data.frame(pca_result$x[, 1:2])
-release_years <- dataset_clean %>%
-  filter(release_year > 0) %>%
-  drop_na() %>%
-  pull(release_year)
-pca_scores$release_year <- release_years
-
-# 4. Extract loading for arrows
-loadings <- as.data.frame(pca_result$rotation[, 1:2])
-loadings$variable <- rownames(loadings)
-
-# 5. Plot PCA with arrows and color by release year
-ggplot(pca_scores, aes(x = PC1, y = PC2, color = release_year)) +
-  geom_point(alpha = 0.6) +
-  scale_color_viridis_c(option = "plasma") +
-  geom_segment(data = loadings,
-               aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5),  # arrows, scaled
-               arrow = arrow(length = unit(0.2, "cm")), color = "gray30") +
-  geom_text(data = loadings,
-            aes(x = PC1 * 5.3, y = PC2 * 5.3, label = variable),
-            size = 3, color = "gray20") +
-  labs(
-    title = "PCA Biplot of Song Features",
-    x = "PC1",
-    y = "PC2",
-    color = "Release Year"
-  ) +
-  theme_minimal()
-```
 
 # References
 
